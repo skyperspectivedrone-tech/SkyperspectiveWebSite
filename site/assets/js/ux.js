@@ -42,6 +42,20 @@
     });
   }
 
+  /* Cartes "Trois façons de voir votre projet" : la vidéo ne joue qu'au survol,
+     une seule à la fois par nature (une seule souris) — jamais d'autoplay au
+     chargement ni sur tactile, où l'affiche statique suffit. */
+  var clips = document.querySelectorAll('.service-card__clip');
+  if (clips.length && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    clips.forEach(function (video) {
+      var carte = video.closest('.service-card');
+      if (!carte) return;
+      carte.addEventListener('mouseenter', function () { video.play().catch(function () {}); });
+      carte.addEventListener('mouseleave', function () { video.pause(); video.currentTime = 0; });
+    });
+  }
+
   document.querySelectorAll('.accordion__item').forEach(function (item) {
     var bouton = item.querySelector('.accordion__q');
     if (!bouton) return;

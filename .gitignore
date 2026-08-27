@@ -13,23 +13,36 @@ maquette.html
 
 # Sources brutes : jamais commitées (poids, et déjà compressées dans site/assets/).
 # Elles restent sur cette machine, simplement hors du dépôt Git.
-Render_air3s/
-Render_air3s.zip
-Render_avata2/
-Render_avata2.zip
-Sky Perspective Design System/
-exemples/
-photo-alpes.png
-drone-air3s.png
-plan fixe air3s.png
-plan fixe avata2.png
-image montage video colorimétrie .jpg
-Exemple usage logo.png
-Logo_Official
-Logo_Official.png
-logo_profil_sans_texte@2x.png
-Avata-2.png.webp
-Logo/
+# Chemins ancrés à la racine (/) : un motif nu matcherait aussi un fichier de
+# même nom sous site/assets/ et l'exclurait silencieusement du dépôt.
+/Render_air3s/
+/Render_air3s.zip
+/Render_avata2/
+/Render_avata2.zip
+/Sky Perspective Design System/
+/exemples/
+/photo-alpes.png
+/drone-air3s.png
+/plan fixe air3s.png
+/plan fixe avata2.png
+/image montage video colorimétrie .jpg
+/Exemple usage logo.png
+/Logo_Official
+/Logo_Official.png
+/logo_profil_sans_texte@2x.png
+/Avata-2.png.webp
+/Logo/
+
+# Photos brutes prestations et rushs accueil : sources non compressées,
+# déjà retouchées/recadrées dans site/assets/img et site/assets/media.
+/chantier.png
+/immobilier.png
+/restaurant.jpg
+/scan3D.png
+/tourisme.jpg
+/fpv final for web site.jpg
+/dynamic/
+/stabilisé/
 
 # Config locale Claude Code (chemins propres à chaque machine)
 .claude/

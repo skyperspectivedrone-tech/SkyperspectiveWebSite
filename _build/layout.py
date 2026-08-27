@@ -57,9 +57,9 @@ ICONES = {
     "check": '<path d="M4 10.5 8 14l8-8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
     "building": '<rect x="4" y="2.5" width="9" height="15" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M13 8h3v9.5H4" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 5.5h1.2M9.5 5.5h1.2M6.5 8.5h1.2M9.5 8.5h1.2M6.5 11.5h1.2M9.5 11.5h1.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>',
     "utensils": '<path d="M4 3v4M6 3v4M8 3v4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M6 7v10.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M14 3c-2 0-3 2-3 4.5S12 11 14 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M14 3v14.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>',
-    "running": '<circle cx="13.2" cy="3.6" r="1.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12.3 6.2 8.8 8.4l1.3 2.3-2.6 2.7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12.3 6.2l2.6 1.7-.8 2.8 3.3 2-1 2.8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.8 8.4 5.6 7.3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
+    "running": '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M14.007 5a2 2 0 1 0 4 0a2 2 0 0 0-4 0"/><path d="M7 17l5 1l.75-1.5M18 21v-4l-4-3l1-6"/><path d="M10 12V9l5-1l3 3l3 1M10 5H6m0 5H2"/></g>',
     "box": '<path d="M10 2.5 17.5 6.5 10 10.5 2.5 6.5z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M2.5 6.5v7l7.5 4 7.5-4v-7M10 10.5v7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>',
-    "crane": '<path d="M6 17.5V3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M3 17.5h7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M2.5 3.5h15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M6 6 15.5 3.7" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M14 3.5v4M13.2 8.4l.8.8.8-.8" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>',
+    "crane": '<path fill="currentColor" d="M240 80H108.94L87.16 36.42A8 8 0 0 0 80 32H48a8 8 0 0 0-8 8v40H24a8 8 0 0 0 0 16h16v112H24a8 8 0 0 0 0 16h104a8 8 0 0 0 0-16h-16V96h96v88h-16v-8a8 8 0 0 0-16 0v8a16 16 0 0 0 16 16h16a16 16 0 0 0 16-16V96h16a8 8 0 0 0 0-16M56 48h19.06l16 32H56Zm0 160v-48h40v48Zm40-64H56V96h40Z"/>',
     "mountain": '<path d="M2 16 7.5 6l3 5.2L12.5 8 18 16z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="14.5" cy="5" r="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/>',
     "shield": '<path d="M10 2.2 17 5.3v5.4c0 4.3-3 7.1-7 7.9-4-.8-7-3.6-7-7.9V5.3z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>',
     "shield-check": '<path d="M10 2.2 17 5.3v5.4c0 4.3-3 7.1-7 7.9-4-.8-7-3.6-7-7.9V5.3z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M6.8 10 9.2 12.4 13.4 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
@@ -68,11 +68,15 @@ ICONES = {
 }
 
 
+ICONES_VIEWBOX = {"crane": "0 0 256 256", "running": "0 0 24 24"}
+
+
 def icone(nom, classe=""):
     cls = f' class="{classe}"' if classe else ""
+    vb = ICONES_VIEWBOX.get(nom, "0 0 20 20")
     # width/height explicites : sans eux un <svg> sans dimension CSS retombe sur la
     # taille par défaut du navigateur (300×150) au lieu de suivre son contexte.
-    return f'<svg{cls} width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">{ICONES[nom]}</svg>'
+    return f'<svg{cls} width="20" height="20" viewBox="{vb}" aria-hidden="true">{ICONES[nom]}</svg>'
 
 
 def footer():

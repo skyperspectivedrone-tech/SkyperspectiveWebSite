@@ -8,7 +8,7 @@ SERVICES = [
      "long": "Vidéos et photos aériennes pour révéler un bien sous son meilleur jour — extérieurs, "
              "volumes, environnement. Une prestation pensée aussi bien pour les annonces que pour "
              "la communication d’un promoteur.",
-     "image": "assets/img/air3s-still.jpg",
+     "image": "assets/img/prestations/immobilier.jpg",
      "livrables": ["Photos HD", "Visite virtuelle 360°", "Inspection de toiture et de façade",
                    "Traversée FPV extérieur / intérieur", "Livraison rapide"],
      "grise": "Stabilisé / FPV"},
@@ -16,7 +16,7 @@ SERVICES = [
      "court": "Révéler l’ambiance, l’expérience et le lieu.",
      "long": "Mettre en scène une salle, une terrasse, une vitrine : des images qui donnent envie "
              "d’y être, pensées pour vos réseaux et votre site.",
-     "image": "assets/img/avata2-still.jpg",
+     "image": "assets/img/prestations/commerces.jpg",
      "livrables": ["Plan de présentation", "Parcours immersif FPV et stabilisé",
                    "Vues extérieur / intérieur", "Séquences produit", "Habillage visuel", "Montage court"],
      "grise": "Stabilisé / FPV"},
@@ -24,7 +24,7 @@ SERVICES = [
      "court": "Des images dynamiques et percutantes.",
      "long": "Voiture, moto, VTT : un suivi au plus près de l’action, pensé pour le rythme et la "
              "sensation de vitesse.",
-     "image": "assets/img/avata2-product.webp",
+     "image": "assets/img/prestations/sport.jpg",
      "livrables": ["Suivi voiture, moto, vélo", "Plan au sol au plus près de l’action",
                    "Rendu dynamisé FPV", "Clip promotionnel", "Édit court"],
      "grise": "Stabilisé / FPV"},
@@ -32,7 +32,7 @@ SERVICES = [
      "court": "Mesurer et documenter avec précision.",
      "long": "Un maillage 3D texturé et une orthophoto géoréférencée pour mesurer, documenter et "
              "exploiter un site avec précision.",
-     "image": "assets/img/air3s-product.png",
+     "image": "assets/img/prestations/scans3d.jpg",
      "livrables": ["Modélisation 3D", "Orthophoto", "Relevé topographique",
                    "Documentation visuelle exploitable"],
      "grise": "Stabilisé"},
@@ -40,7 +40,7 @@ SERVICES = [
      "court": "Documenter l’avancement avec clarté et rigueur.",
      "long": "Un point de vue reproduit au fil des mois, pour suivre l’avancement d’un chantier et "
              "communiquer sur son état.",
-     "image": "assets/img/air3s-still.jpg",
+     "image": "assets/img/prestations/chantier.jpg",
      "livrables": ["Photos de vue régulières", "Photos vue avant / pendant / après",
                    "Time-lapse de chantier", "Relevé et visite photo pour reporting"],
      "grise": "Stabilisé / FPV"},
@@ -48,7 +48,7 @@ SERVICES = [
      "court": "Mettre en valeur paysage, destination ou événement.",
      "long": "Paysages, patrimoine, événements : des images qui racontent un territoire et donnent "
              "envie de le découvrir.",
-     "image": "assets/img/alpes-sunrise.jpg",
+     "image": "assets/img/prestations/tourisme.jpg",
      "livrables": ["Plan large immersif", "Contenu immersif", "Vidéo de présentation",
                    "Capsule réseaux sociaux", "Image storytelling"],
      "grise": "Stabilisé / FPV"},

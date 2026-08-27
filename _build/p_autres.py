@@ -14,12 +14,15 @@ def _section_heading(eyebrow, titre, lead=""):
 
 
 PILIERS = [
-    ("assets/img/air3s-still.jpg", "Précision et stabilité",
-     "Plans aériens fluides et maîtrisés pour sublimer vos projets avec une qualité cinéma."),
-    ("assets/img/avata2-still.jpg", "Immersion et dynamisme",
-     "Plans immersifs et nerveux pour capturer l’adrénaline et raconter autrement."),
-    ("assets/img/alpes-sunrise.jpg", "Scan 3D",
-     "Un relevé précis pour mesurer, documenter et valoriser chaque site."),
+    {"titre": "Précision et stabilité",
+     "texte": "Plans aériens fluides et maîtrisés pour sublimer vos projets avec une qualité cinéma.",
+     "poster": "assets/media/accueil/stabilise-poster.jpg", "video": "assets/media/accueil/stabilise.mp4"},
+    {"titre": "Immersion et dynamisme",
+     "texte": "Plans immersifs et nerveux pour capturer l’adrénaline et raconter autrement.",
+     "poster": "assets/media/accueil/dynamique-poster.jpg", "video": "assets/media/accueil/dynamique.mp4"},
+    {"titre": "Scan 3D",
+     "texte": "Un relevé précis pour mesurer, documenter et valoriser chaque site.",
+     "image": "assets/img/accueil/scan3d.jpg"},
 ]
 
 DEROULE = [
@@ -38,13 +41,18 @@ DEROULE = [
 ]
 
 
-def _pilier(chemin, titre, texte, i):
+def _pilier(p, i):
     delai = f" reveal-in--d{i}" if i else ""
+    if "video" in p:
+        media = (f'<video class="service-card__clip" poster="{p["poster"]}" src="{p["video"]}" '
+                  'muted loop playsinline preload="none" aria-hidden="true"></video>')
+    else:
+        media = f'<img src="{p["image"]}" alt="" loading="lazy" decoding="async">'
     return f"""<div class="card card--flush service-card reveal-in{delai}">
-          <div class="service-card__media"><img src="{chemin}" alt="" loading="lazy" decoding="async"></div>
+          <div class="service-card__media">{media}</div>
           <div class="service-card__body">
-            <h3 class="service-card__title">{titre}</h3>
-            <p class="service-card__desc">{texte}</p>
+            <h3 class="service-card__title">{p['titre']}</h3>
+            <p class="service-card__desc">{p['texte']}</p>
           </div>
         </div>"""
 
@@ -61,7 +69,7 @@ def _deroule():
 
 
 def accueil():
-    piliers = "".join(_pilier(c, t, x, i) for i, (c, t, x) in enumerate(PILIERS))
+    piliers = "".join(_pilier(p, i) for i, p in enumerate(PILIERS))
     return f"""    <section class="hero">
       <img class="hero__decor" src="assets/img/hero-alpes.jpg" width="1600" height="900"
            alt="Sommet alpin enneigé au lever du soleil, photographié au drone."
