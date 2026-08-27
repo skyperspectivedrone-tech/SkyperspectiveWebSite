@@ -137,7 +137,7 @@ def _calculateur():
                 </div>
 
                 <div class="etape" data-etape="adresse" hidden>
-                  <p class="champ champ--adresse">
+                  <div class="champ champ--adresse">
                     <label for="dv-adresse">Adresse du lieu de tournage</label>
                     <input id="dv-adresse" type="text" autocomplete="off" spellcheck="false"
                            placeholder="Commencez à saisir une adresse…"
@@ -146,7 +146,7 @@ def _calculateur():
                     <ul class="suggestions" id="dv-suggestions" role="listbox" hidden></ul>
                     <span class="champ__aide">Facultatif — sans adresse, le déplacement
                       restera à préciser.</span>
-                  </p>
+                  </div>
                   <p class="champ champ--secours" id="dv-secours" hidden>
                     <label for="dv-km">Distance depuis Montpellier (km)</label>
                     <input id="dv-km" type="number" min="0" step="1" inputmode="numeric"

@@ -42,18 +42,18 @@
     });
   }
 
-  /* Cartes "Trois façons de voir votre projet" : la vidéo ne joue qu'au survol,
-     une seule à la fois par nature (une seule souris) — jamais d'autoplay au
-     chargement ni sur tactile, où l'affiche statique suffit. */
+  /* Cartes "Trois façons de voir votre projet" : la vidéo se lance toute seule
+     dès que sa carte entre à l'écran (mobile compris) et reboucle en continu ;
+     elle se met en pause hors champ pour ne pas décoder inutilement. */
   var clips = document.querySelectorAll('.service-card__clip');
-  if (clips.length && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
-    clips.forEach(function (video) {
-      var carte = video.closest('.service-card');
-      if (!carte) return;
-      carte.addEventListener('mouseenter', function () { video.play().catch(function () {}); });
-      carte.addEventListener('mouseleave', function () { video.pause(); video.currentTime = 0; });
-    });
+  if (clips.length && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    var ioClips = new IntersectionObserver(function (entrees) {
+      entrees.forEach(function (e) {
+        if (e.isIntersecting) { e.target.play().catch(function () {}); }
+        else { e.target.pause(); }
+      });
+    }, { threshold: 0.4 });
+    clips.forEach(function (video) { ioClips.observe(video); });
   }
 
   document.querySelectorAll('.accordion__item').forEach(function (item) {

@@ -1,9 +1,11 @@
 /* Calculateur de devis — tout se passe côté client.
    Prix = prix de la durée × (1 + coef. complexité) + options fixes + déplacement.
    Le déplacement vient d'un vrai calcul d'itinéraire routier, pas d'une distance à vol d'oiseau :
-   adresse géocodée par l'API Adresse (adresse.data.gouv.fr), trajet mesuré par OSRM.
-   Les deux services sont gratuits et sans clé ; si le réseau est indisponible
-   (aperçu hors ligne, page intégrée), un champ de secours prend le relais. */
+   adresse géocodée par l'API Adresse (adresse.data.gouv.fr, gratuite et sans clé).
+   Le trajet est mesuré par OSRM (démo publique gratuite, sans clé) par défaut, ou par
+   openrouteservice.org si config.routage.cle est renseignée (voir tarifs_config.py) —
+   plus adapté à un trafic soutenu. Si le réseau est indisponible (aperçu hors ligne,
+   page intégrée), un champ de secours prend le relais. */
 (function () {
   var racine = document.getElementById("devis");
   if (!racine) return;
@@ -11,6 +13,7 @@
   var config = JSON.parse(document.getElementById("devis-config").textContent);
   var GEOCODAGE = "https://api-adresse.data.gouv.fr/search/";
   var ITINERAIRE = "https://router.project-osrm.org/route/v1/driving/";
+  var ITINERAIRE_ORS = "https://api.openrouteservice.org/v2/directions/driving-car";
 
   var champs = {
     prestation: racine.querySelector("#dv-prestation"),
@@ -73,6 +76,11 @@
   }
 
   function distanceRoutiere(lon, lat) {
+    var cle = config.routage && config.routage.cle;
+    return cle ? distanceORS(lon, lat, cle) : distanceOSRM(lon, lat);
+  }
+
+  function distanceOSRM(lon, lat) {
     var d = config.depart;
     var url = ITINERAIRE + d.lon + "," + d.lat + ";" + lon + "," + lat
             + "?overview=false&alternatives=true";
@@ -86,11 +94,26 @@
     });
   }
 
+  function distanceORS(lon, lat, cle) {
+    var d = config.depart;
+    var url = ITINERAIRE_ORS + "?api_key=" + encodeURIComponent(cle)
+            + "&start=" + d.lon + "," + d.lat + "&end=" + lon + "," + lat;
+    return fetch(url).then(function (r) {
+      if (!r.ok) throw new Error("itinéraire indisponible (" + r.status + ")");
+      return r.json();
+    }).then(function (j) {
+      if (!j.routes || !j.routes.length) throw new Error("itinéraire introuvable");
+      return Math.round(j.routes[0].summary.distance / 100) / 10;
+    });
+  }
+
   function choisirAdresse(suggestion) {
     adresse.value = suggestion.label;
     fermerListe();
     trajet = { etat: "recherche", label: suggestion.label };
     calculer();
+    // Le calcul se lance dès l'adresse choisie, mais l'étape n'avance que si le
+    // visiteur clique lui-même sur "Continuer" — jamais toute seule.
     distanceRoutiere(suggestion.lon, suggestion.lat).then(function (distance) {
       trajet = {
         etat: "ok",
@@ -99,7 +122,6 @@
         km: distance,
       };
       calculer();
-      avancer();
     }).catch(function (e) { basculerSecours(String(e)); });
   }
 
@@ -321,10 +343,9 @@
 
     boutonRetour.hidden = position === 0;
     var derniere = courante === "fin";
-    boutonSuivant.hidden = derniere;
-    boutonSuivant.textContent = courante === "coordonnees"
-      ? "Envoyer ma demande →"
-      : "Continuer →";
+    // L'envoi se fait uniquement depuis le bouton du récapitulatif : un second
+    // bouton "Envoyer ma demande" ici ferait doublon.
+    boutonSuivant.hidden = derniere || courante === "coordonnees";
     if (courante === "coordonnees") champSociete.hidden = !pro();
     boutonSuivant.disabled = !repondue(courante);
 
@@ -336,6 +357,7 @@
     jauge.style.width = Math.round(((derniere ? etapesChiffrees : position) / etapesChiffrees) * 100) + "%";
 
     if (courante === "adresse") verifierDisponibilite();
+    majBoutonEnvoi();
 
     var champ = etapes[courante] && etapes[courante].querySelector("select, input");
     if (champ && courante !== "prestation") {
@@ -350,10 +372,7 @@
     afficherEtape();
   }
 
-  boutonSuivant.addEventListener("click", function () {
-    if (parcours()[position] === "coordonnees") envoyer();
-    else avancer();
-  });
+  boutonSuivant.addEventListener("click", avancer);
   boutonRetour.addEventListener("click", function () {
     if (position > 0) position -= 1;
     afficherEtape();
@@ -515,14 +534,22 @@
       + "Estimation indicative, établie sur la base des informations fournies. "
       + "Un devis précis vous est adressé après étude du projet.";
 
+    majBoutonEnvoi();
   }
 
+  // Une fois sur l'étape des coordonnées, le bouton du récapitulatif devient
+  // l'envoi réel : il reste désactivé tant que le formulaire n'est pas complet.
+  function majBoutonEnvoi() {
+    if (parcours()[Math.min(position, parcours().length - 1)] !== "coordonnees") return;
+    if (formulaireValide()) bouton.removeAttribute("aria-disabled");
+    else bouton.setAttribute("aria-disabled", "true");
+  }
+
+  // Choisir une option met à jour le calcul et débloque "Continuer" (le nombre
+  // total d'étapes peut aussi changer selon la prestation), mais c'est toujours
+  // au visiteur de cliquer pour passer à l'étape suivante.
   Object.keys(champs).forEach(function (k) {
-    champs[k].addEventListener("change", function () {
-      calculer();
-      if (champs[k].value) avancer();   // « une fois choisi, on passe à la suite »
-      else afficherEtape();
-    });
+    champs[k].addEventListener("change", function () { calculer(); afficherEtape(); });
   });
   cases.forEach(function (c) { c.addEventListener("change", calculer); });
 
@@ -533,6 +560,7 @@
       champ.addEventListener(evt, function () {
         if (k === "type") champSociete.hidden = !pro();
         afficherEtape();
+        majBoutonEnvoi();
       });
     });
   });
@@ -590,7 +618,7 @@
       return;
     }
 
-    boutonSuivant.disabled = true;
+    bouton.setAttribute("aria-disabled", "true");
     etat("Envoi en cours…", "info");
 
     // La documentation impose du JSON pour les appels en JavaScript,
@@ -613,24 +641,26 @@
       .then(function (j) {
         if (!j.success) throw new Error(j.message || "envoi refusé");
         etat("", null);              // sinon « Envoi en cours… » reste affiché au retour
-        boutonSuivant.disabled = false;
         position = parcours().indexOf("fin");
         afficherEtape();
       })
       .catch(function (e) {
-        boutonSuivant.disabled = false;
+        bouton.removeAttribute("aria-disabled");
         etat("L’envoi a échoué (" + e.message + "). Votre messagerie va s’ouvrir avec la "
            + "demande déjà rédigée.", "erreur");
         window.setTimeout(function () { window.location.href = lienSecours(); }, 1200);
       });
   }
 
-  // Le bouton du récapitulatif conduit à l'étape des coordonnées.
+  // Bouton unique du récapitulatif : avant l'étape des coordonnées, il y conduit ;
+  // une fois dessus, il envoie réellement la demande (pas de second bouton en doublon
+  // dans le pied de l'étape).
   bouton.addEventListener("click", function (e) {
     e.preventDefault();
     var liste = parcours();
     var cible = liste.indexOf("coordonnees");
-    if (cible >= 0 && position < cible) { position = cible; afficherEtape(); }
+    if (cible >= 0 && position < cible) { position = cible; afficherEtape(); return; }
+    if (liste[position] === "coordonnees") envoyer();
   });
 
   calculer();

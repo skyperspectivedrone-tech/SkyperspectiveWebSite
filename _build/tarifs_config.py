@@ -121,6 +121,19 @@ FORMULAIRE = {
     "cle": "366edba0-fc9f-4cc2-bb08-3f7f524e9c53",
 }
 
+# ---------------------------------------------------------------------------
+# Calcul d'itinéraire (distance de déplacement).
+# Par défaut : OSRM (router.project-osrm.org), démo publique gratuite et sans
+# clé — fonctionne tel quel, mais n'est pas prévue pour un trafic soutenu.
+# Renseigner ROUTAGE["cle"] avec une clé openrouteservice.org (gratuite,
+# 2000 requêtes/jour, inscription en 2 minutes) fait basculer automatiquement
+# le calcul dessus, sans autre changement. Tant qu'elle est vide, OSRM reste
+# utilisé — le site fonctionne dans les deux cas.
+# ---------------------------------------------------------------------------
+ROUTAGE = {
+    "cle": "",
+}
+
 TYPES_CLIENT = [
     ("particulier",  "Particulier"),
     ("agence",       "Agence immobilière"),
@@ -166,4 +179,5 @@ def config_json():
         "depart": DEPART,
         "departement": DEPARTEMENT,
         "formulaire": FORMULAIRE,
+        "routage": ROUTAGE,
     }, ensure_ascii=False, separators=(",", ":"))

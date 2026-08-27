@@ -87,6 +87,14 @@ def contenu():
     reveals = "\n".join(_reveal(seq, i == 0) for i, seq in enumerate(SEQUENCES))
     return f"""{reveals}
 
+    <div class="scroll-hint" id="scroll-hint" aria-hidden="true">
+      <span class="scroll-hint__label">Défiler</span>
+      <svg class="scroll-hint__icon" width="16" height="26" viewBox="0 0 16 26" fill="none">
+        <path d="M2 7.5 8 13.5 14 7.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M2 15.5 8 21.5 14 15.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity=".5"/>
+      </svg>
+    </div>
+
     <div class="transition-noir-bleu" aria-hidden="true"></div>
 
     <section class="section">

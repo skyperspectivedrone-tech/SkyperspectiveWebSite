@@ -79,7 +79,7 @@ def accueil():
       <div class="hero__voile--haut" aria-hidden="true"></div>
       <div class="hero__contenu">
         <div class="hero__kicker"><i></i><span class="label-mono">Télépilote de drone · Montpellier</span></div>
-        <h1 class="hero__titre">Des images,<br>une perspective,<br>votre histoire.</h1>
+        <h1 class="hero__titre">Des images<br>une perspective<br>votre histoire</h1>
         <p class="hero__lead">Pilote de drone professionnel, je transforme vos projets en images
           spectaculaires et immersives.</p>
         <div class="hero__actions">

@@ -111,8 +111,9 @@ Fichiers logo :
 - **Jamais de lorem ipsum** — contenu réaliste en français.
 - Ne jamais présenter une vidéo de banque d'images comme une réalisation Sky Perspective.
 - Franchise en base de TVA. La mention « TVA non applicable, art. 293 B du CGI » figure
-  **sur les devis et factures uniquement**, plus dans le pied de page (décision validée) ;
-  elle reste rédigée en toutes lettres dans la page Mentions légales.
+  **sur les devis et factures uniquement** (décision validée, revue) : elle ne figure ni
+  dans le pied de page ni dans la page Mentions légales, pour éviter la répétition —
+  seuls les devis et factures, où la mention est légalement exigée, la portent.
   Ne pas afficher « HT » seul dans les tarifs, qui laisse croire qu'une TVA s'ajoutera.
 
 ## Règles techniques
@@ -332,12 +333,17 @@ mesuré **par la route**, jamais à vol d'oiseau :
   sans clé, CORS ouvert ; autocomplétion clavier et souris. La requête porte un **biais de
   proximité** (`&lat=&lon=` sur Montpellier) : sans lui, « place de la mairie » remontait
   des communes de toute la France avant celles de l'Hérault ;
-- itinéraire par **OSRM** (`router.project-osrm.org`), variante la plus courte retenue ;
+- itinéraire par **OSRM** (`router.project-osrm.org`) par défaut, variante la plus courte
+  retenue, ou par **openrouteservice.org** dès que `ROUTAGE["cle"]` est renseignée dans
+  `_build/tarifs_config.py` (bascule automatique, voir `distanceOSRM`/`distanceORS` dans
+  `devis.js`) ;
 - ≤ 30 km → **Inclus** ; au-delà → **distance × 0,40 €**, aller simple, sans franchise déduite ;
 - hors département 34 → **À déterminer**.
 
 ⚠️ OSRM est un serveur de démonstration, non prévu pour un usage de production soutenu.
-Avant mise en ligne, prévoir un fournisseur avec quota (OpenRouteService, Geoapify).
+Tant que `ROUTAGE["cle"]` est vide le site reste fonctionnel (repli automatique sur OSRM),
+mais une clé openrouteservice.org (gratuite, 2000 requêtes/j) est recommandée avant un
+trafic soutenu — marche à suivre dans `DEPLOIEMENT.md`.
 
 **Repli sans réseau** : la disponibilité du géocodage est sondée **dès l'arrivée sur l'étape
 adresse**, pas au premier caractère saisi. Si l'appel échoue — c'est le cas dans la maquette

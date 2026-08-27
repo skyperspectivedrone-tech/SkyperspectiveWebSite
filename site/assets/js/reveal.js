@@ -138,4 +138,15 @@
       })();
     }
   });
+
+  // Repère "défiler" : visible tant qu'on est dans les séquences 3D, masqué dès que
+  // la transition vers la section "Montage" entre à l'écran.
+  var indice = document.getElementById("scroll-hint");
+  var seuil = document.querySelector(".transition-noir-bleu");
+  if (indice && seuil) {
+    var io = new IntersectionObserver(function (entrees) {
+      entrees.forEach(function (e) { indice.classList.toggle("is-cache", e.isIntersecting); });
+    }, { threshold: 0 });
+    io.observe(seuil);
+  }
 })();

@@ -30,8 +30,7 @@ def mentions_legales():
           SIRET : {SITE['siret']}<br>
           Siège : {SITE['ville']}<br>
           Téléphone : {SITE['tel']}<br>
-          E-mail : <a href="mailto:{SITE['email']}">{SITE['email']}</a><br>
-          TVA non applicable, article 293 B du Code général des impôts.</p>
+          E-mail : <a href="mailto:{SITE['email']}">{SITE['email']}</a></p>
           <p style="margin-top:14px">Directeur de la publication : le gérant de {SITE['nom']}.</p>"""),
         _bloc("Hébergement", """
           <p>Le site est hébergé par GitHub Pages — GitHub, Inc.,

@@ -554,9 +554,9 @@ button { font: inherit; color: inherit; }
 .suggestions li:hover, .suggestions li.is-survol { background: var(--surface-card-hover); color: var(--text-strong); }
 
 .etapes__pied { display: flex; align-items: center; gap: var(--sp-3); margin-top: var(--sp-7); padding-top: var(--sp-5); border-top: 1px solid var(--border-hairline); flex-wrap: wrap; }
-.etapes__progression { display: flex; align-items: center; gap: var(--sp-3); margin-left: auto; font-family: var(--font-mono); font-size: var(--fs-label); letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--text-faint); }
-.etapes__progression i { display: block; width: 90px; height: 2px; background: var(--border-soft); border-radius: 2px; overflow: hidden; }
-.etapes__progression b { display: block; height: 100%; width: 0; background: var(--accent); transition: width .35s var(--ease-out); }
+.etapes__progression { display: flex; align-items: center; gap: var(--sp-3); margin-left: auto; font-family: var(--font-mono); font-size: var(--fs-label); letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--text-muted); font-weight: var(--fw-semibold); }
+.etapes__progression i { display: block; width: 120px; height: 5px; background: var(--border-soft); border-radius: 3px; overflow: hidden; }
+.etapes__progression b { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 3px; transition: width .35s var(--ease-out); }
 
 .etape__titre { font-family: var(--font-display); font-size: var(--fs-h2); font-weight: var(--fw-thin); letter-spacing: var(--ls-display); text-transform: uppercase; }
 .etape__intro { margin-top: var(--sp-3); max-width: 52ch; color: var(--text-body); font-size: var(--fs-small); }
@@ -580,9 +580,14 @@ button { font: inherit; color: inherit; }
 .devis__lignes li:last-child { border-bottom: none; padding-bottom: 0; }
 .devis__lignes strong { font-family: var(--font-mono); font-weight: var(--fw-regular); color: var(--text-strong); text-align: right; font-variant-numeric: tabular-nums; }
 .devis__lignes strong.is-gratuit { color: var(--accent-hover); }
-.devis__total { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-4); margin-top: var(--sp-5); padding-top: var(--sp-5); border-top: 1px solid var(--border-hairline); }
+/* Empilé, pas côte à côte : en ligne avec justify-content: space-between, un montant à
+   quatre chiffres (ex. "1 500,00 €") dépassait le cadre — le <strong> a une largeur figée
+   par son contenu et ne se réduit jamais sous elle en flex (min-width: auto par défaut).
+   Empilé, le prix dispose de toute la largeur de la carte, quel que soit le nombre de
+   chiffres, et une taille fluide absorbe le reste. */
+.devis__total { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-top: var(--sp-5); padding-top: var(--sp-5); border-top: 1px solid var(--border-hairline); }
 .devis__total > span { font-family: var(--font-mono); font-size: var(--fs-label); letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--text-muted); }
-.devis__total strong { font-family: var(--font-display); font-weight: var(--fw-thin); font-size: 3rem; letter-spacing: .02em; color: var(--text-strong); line-height: 1; }
+.devis__total strong { display: block; max-width: 100%; font-family: var(--font-display); font-weight: var(--fw-thin); font-size: clamp(1.8rem, 8vw, 3rem); letter-spacing: .02em; color: var(--text-strong); line-height: 1; overflow-wrap: anywhere; }
 .devis__envoi { width: 100%; margin-top: var(--sp-5); }
 .devis__envoi[aria-disabled="true"] { opacity: .4; pointer-events: none; }
 .devis__mention { margin-top: var(--sp-4); font-size: var(--fs-caption); color: var(--text-faint); line-height: 1.55; }
@@ -645,7 +650,24 @@ button { font: inherit; color: inherit; }
   .reveal__col { flex: 1 1 auto; }
   .reveal__markers { display: none; }
 }
-.transition-noir-bleu { height: clamp(200px,34vh,400px); background: linear-gradient(180deg, #000 0%, #010B10 22%, #041019 45%, #071723 68%, #0A1D2A 88%, var(--navy-900) 100%); }
+
+/* Repère de défilement : discret (opacité faible) mais assez contrasté pour se lire sur
+   les images sombres du reveal. Fixe à l'écran tant qu'on est dans les séquences 3D ;
+   reveal.js le masque dès que la transition vers "Montage" entre dans le viewport. */
+.scroll-hint { position: fixed; left: 50%; bottom: clamp(20px, 5vh, 36px); transform: translateX(-50%); z-index: 40; display: flex; flex-direction: column; align-items: center; gap: 6px; color: rgba(255,255,255,.55); pointer-events: none; transition: opacity .5s var(--ease-out); opacity: 1; }
+.scroll-hint.is-cache { opacity: 0; }
+.scroll-hint__label { font-family: var(--font-mono); font-size: var(--fs-label); letter-spacing: var(--ls-label); text-transform: uppercase; }
+.scroll-hint__icon { animation: scroll-hint-bounce 1.8s ease-in-out infinite; }
+@keyframes scroll-hint-bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(5px); } }
+@media (prefers-reduced-motion: reduce) {
+  .scroll-hint__icon { animation: none; }
+}
+/* Dégradé en transparence, pas en couleur fixe : #011F2C (navy) ne correspond pas
+   au fond réel de la page à cette hauteur (#050A0D, la queue du dégradé de body en
+   background-attachment: fixed) — une couleur d'arrivée figée créait une couture
+   nette. En s'effaçant vers transparent, la fin du dégradé épouse le fond réel
+   quel qu'il soit. */
+.transition-noir-bleu { height: clamp(280px,40vh,520px); background: linear-gradient(180deg, #000 0%, rgba(0,0,0,.92) 25%, rgba(0,0,0,.65) 50%, rgba(0,0,0,.28) 75%, rgba(0,0,0,0) 100%); }
 
 /* ---------- Responsive : rythme global ---------- */
 @media (max-width: 980px) {
