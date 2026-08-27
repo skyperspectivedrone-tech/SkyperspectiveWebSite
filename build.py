@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """Génère site/*.html — équivalent du build Astro, sans dépendance."""
-import sys, os, pathlib
+import sys, os, pathlib, datetime
 sys.path.insert(0, "_build")
-from layout import page
+from layout import page, SITE
 import p_prestations, p_autres, p_legal, p_materiel, p_tarifs
 
 SORTIE = pathlib.Path("site")
@@ -48,6 +48,34 @@ def main():
         html = page(titre, description, fichier, rendu(), scripts)
         (SORTIE / fichier).write_text(html, encoding="utf-8")
         print(f"  ✓ site/{fichier}  ({len(html) // 1024} Ko)")
+
+    ecrire_sitemap()
+    ecrire_robots()
+
+
+def ecrire_sitemap():
+    aujourdhui = datetime.date.today().isoformat()
+    urls = []
+    for fichier, *_ in PAGES:
+        chemin = "" if fichier == "index.html" else fichier
+        priorite = "1.0" if fichier == "index.html" else "0.6"
+        urls.append(f"""  <url>
+    <loc>{SITE['url']}/{chemin}</loc>
+    <lastmod>{aujourdhui}</lastmod>
+    <priority>{priorite}</priority>
+  </url>""")
+    contenu = ('<?xml version="1.0" encoding="UTF-8"?>\n'
+               '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+               + "\n".join(urls) + "\n</urlset>\n")
+    (SORTIE / "sitemap.xml").write_text(contenu, encoding="utf-8")
+    print("  ✓ site/sitemap.xml")
+
+
+def ecrire_robots():
+    contenu = f"User-agent: *\nAllow: /\n\nSitemap: {SITE['url']}/sitemap.xml\n"
+    (SORTIE / "robots.txt").write_text(contenu, encoding="utf-8")
+    print("  ✓ site/robots.txt")
+
 
 if __name__ == "__main__":
     main()

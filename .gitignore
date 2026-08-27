@@ -6,6 +6,8 @@
 # à chaque déploiement (voir .github/workflows/deploy.yml). Seuls les assets
 # écrits à la main (css, js, img, media) restent suivis dans site/.
 /site/*.html
+/site/sitemap.xml
+/site/robots.txt
 
 # Aperçu autonome pour Claude Design (fichier unique, plusieurs Mo, régénérable
 # avec `python3 build_artifact.py`)

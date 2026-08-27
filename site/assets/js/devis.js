@@ -331,11 +331,19 @@
       .catch(function (e) { basculerSecours(String(e)); });
   }
 
+  var etapeAffichee = null;
+
   function afficherEtape() {
     var liste = parcours();
     if (position >= liste.length) position = liste.length - 1;
     if (position < 0) position = 0;
     var courante = liste[position];
+    // On ne force le focus que lors d'une vraie transition vers cette étape,
+    // jamais quand afficherEtape() est relancé par une simple frappe dans un
+    // champ déjà affiché (formulaire de coordonnées) — sinon le focus revient
+    // sans arrêt sur le premier champ (prénom) à chaque caractère tapé ailleurs.
+    var changementEtape = courante !== etapeAffichee;
+    etapeAffichee = courante;
 
     ORDRE.forEach(function (cle) {
       if (etapes[cle]) etapes[cle].hidden = cle !== courante;
@@ -359,9 +367,11 @@
     if (courante === "adresse") verifierDisponibilite();
     majBoutonEnvoi();
 
-    var champ = etapes[courante] && etapes[courante].querySelector("select, input");
-    if (champ && courante !== "prestation") {
-      window.setTimeout(function () { champ.focus({ preventScroll: true }); }, 0);
+    if (changementEtape) {
+      var champ = etapes[courante] && etapes[courante].querySelector("select, input");
+      if (champ && courante !== "prestation") {
+        window.setTimeout(function () { champ.focus({ preventScroll: true }); }, 0);
+      }
     }
   }
 

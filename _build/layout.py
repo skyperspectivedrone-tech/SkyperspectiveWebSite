@@ -11,6 +11,7 @@ SITE = {
     "ville": "Montpellier (34)",
     "siret": "10863047600019",
     "annee": 2026,
+    "url": "https://skyperspective.fr",
 }
 
 NAV = [
@@ -113,18 +114,66 @@ SCRIPT_NAV = """<script>
   </script>"""
 
 
+def _canonique(courante):
+    chemin = "" if courante == "index.html" else courante
+    return f"{SITE['url']}/{chemin}"
+
+
+def _jsonld():
+    import json
+    return json.dumps({
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        "name": SITE["nom"],
+        "image": f"{SITE['url']}/assets/img/og-image.jpg",
+        "url": SITE["url"],
+        "telephone": SITE["tel_lien"],
+        "email": SITE["email"],
+        "description": "Télépilote de drone professionnel à Montpellier : vidéo aérienne "
+                        "stabilisée et FPV pour l’immobilier, les commerces, le sport "
+                        "mécanique, le suivi de chantier et le tourisme.",
+        "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Montpellier",
+            "addressRegion": "Occitanie",
+            "addressCountry": "FR",
+        },
+        "areaServed": "France",
+        "priceRange": "€€",
+    }, ensure_ascii=False)
+
+
 def page(titre, description, courante, contenu, scripts=""):
+    titre_complet = f"{titre} — {SITE['nom']}"
+    canonique = _canonique(courante)
+    og_image = f"{SITE['url']}/assets/img/og-image.jpg"
     return f"""<!doctype html>
 <html lang="fr">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{titre} — {SITE['nom']}</title>
+  <title>{titre_complet}</title>
   <meta name="description" content="{description}">
+  <link rel="canonical" href="{canonique}">
+  <link rel="icon" type="image/svg+xml" href="assets/img/logo-icone.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png">
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="{SITE['nom']}">
+  <meta property="og:locale" content="fr_FR">
+  <meta property="og:title" content="{titre_complet}">
+  <meta property="og:description" content="{description}">
+  <meta property="og:url" content="{canonique}">
+  <meta property="og:image" content="{og_image}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{titre_complet}">
+  <meta name="twitter:description" content="{description}">
+  <meta name="twitter:image" content="{og_image}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css">
+  <script type="application/ld+json">{_jsonld()}</script>
 </head>
 <body>
   {header(courante)}
