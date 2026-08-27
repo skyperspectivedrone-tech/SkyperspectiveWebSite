@@ -1,0 +1,53 @@
+# -*- coding: utf-8 -*-
+"""Génère site/*.html — équivalent du build Astro, sans dépendance."""
+import sys, os, pathlib
+sys.path.insert(0, "_build")
+from layout import page
+import p_prestations, p_autres, p_legal, p_materiel, p_tarifs
+
+SORTIE = pathlib.Path("site")
+
+PAGES = [
+    ("index.html", "Pilote de drone cinématographique à Montpellier",
+     "Sky Perspective, télépilote de drone à Montpellier : vidéo aérienne stabilisée et FPV "
+     "pour l’immobilier, les commerces, le sport mécanique et le suivi de chantier.",
+     p_autres.accueil),
+    ("prestations.html", "Prestations drone",
+     "Vidéo aérienne pour l’immobilier, les commerces, le sport mécanique, le suivi de chantier, "
+     "les scans 3D et le tourisme. Prestations drone stabilisé et FPV partout en France.",
+     p_prestations.contenu),
+    ("tarifs.html", "Tarifs",
+     "Tarifs de prestation drone : immobilier à partir de 450 €, commerces 590 €, "
+     "sport mécanique 850 €, suivi de chantier 450 € par passage.",
+     p_tarifs.contenu),
+    ("materiel.html", "Matériel & savoir-faire",
+     "DJI Air 3S double focale 24 et 70 mm, DJI Avata 2 FPV : le matériel et le cadre "
+     "réglementaire des tournages Sky Perspective.",
+     p_materiel.contenu),
+    ("contact.html", "Contact",
+     "Contactez Sky Perspective, télépilote de drone à Montpellier. Réponse sous 24 h.",
+     p_autres.contact),
+    ("mentions-legales.html", "Mentions légales",
+     "Mentions légales de Sky Perspective, télépilote de drone à Montpellier.",
+     p_legal.mentions_legales),
+    ("confidentialite.html", "Confidentialité",
+     "Politique de confidentialité et de protection des données de Sky Perspective.",
+     p_legal.confidentialite),
+]
+
+def main():
+    SORTIE.mkdir(exist_ok=True)
+    for fichier, titre, description, rendu in PAGES:
+        scripts = ""
+        if fichier == "materiel.html":
+            scripts = '<script src="assets/js/reveal.js" defer></script>'
+        elif fichier == "tarifs.html":
+            scripts = '<script src="assets/js/devis.js" defer></script>'
+        elif fichier == "contact.html":
+            scripts = '<script src="assets/js/contact.js" defer></script>'
+        html = page(titre, description, fichier, rendu(), scripts)
+        (SORTIE / fichier).write_text(html, encoding="utf-8")
+        print(f"  ✓ site/{fichier}  ({len(html) // 1024} Ko)")
+
+if __name__ == "__main__":
+    main()

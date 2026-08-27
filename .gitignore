@@ -1,0 +1,35 @@
+# Fichiers système
+.DS_Store
+**/.DS_Store
+
+# Pages générées par build.py — reconstruites automatiquement par GitHub Actions
+# à chaque déploiement (voir .github/workflows/deploy.yml). Seuls les assets
+# écrits à la main (css, js, img, media) restent suivis dans site/.
+/site/*.html
+
+# Aperçu autonome pour Claude Design (fichier unique, plusieurs Mo, régénérable
+# avec `python3 build_artifact.py`)
+maquette.html
+
+# Sources brutes : jamais commitées (poids, et déjà compressées dans site/assets/).
+# Elles restent sur cette machine, simplement hors du dépôt Git.
+Render_air3s/
+Render_air3s.zip
+Render_avata2/
+Render_avata2.zip
+Sky Perspective Design System/
+exemples/
+photo-alpes.png
+drone-air3s.png
+plan fixe air3s.png
+plan fixe avata2.png
+image montage video colorimétrie .jpg
+Exemple usage logo.png
+Logo_Official
+Logo_Official.png
+logo_profil_sans_texte@2x.png
+Avata-2.png.webp
+Logo/
+
+# Config locale Claude Code (chemins propres à chaque machine)
+.claude/
