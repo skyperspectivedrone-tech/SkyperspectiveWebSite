@@ -12,6 +12,7 @@ SITE = {
     "siret": "10863047600019",
     "annee": 2026,
     "url": "https://skyperspective.fr",
+    "google_site_verification": "3EfKeMMNbD5cmotuOgaGzCWDv4EToJfKlGhpAjUTR68",
 }
 
 NAV = [
@@ -155,6 +156,7 @@ def page(titre, description, courante, contenu, scripts=""):
   <title>{titre_complet}</title>
   <meta name="description" content="{description}">
   <link rel="canonical" href="{canonique}">
+  {f'<meta name="google-site-verification" content="{SITE["google_site_verification"]}">' if SITE["google_site_verification"] else ""}
   <link rel="icon" type="image/svg+xml" href="assets/img/logo-icone.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32.png">
   <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">

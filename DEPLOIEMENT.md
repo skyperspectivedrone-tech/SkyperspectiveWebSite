@@ -230,6 +230,78 @@ Comptez une à deux minutes entre le `push` et la mise à jour visible en ligne.
 
 ---
 
+## Étape 8 — Faire indexer le site par Google
+
+Un site tout juste mis en ligne n'apparaît pas dans Google du jour au
+lendemain : il faut d'abord que Google le découvre et l'explore. Ça se
+déclenche depuis un compte Google personnel — impossible à faire à votre
+place, mais ça prend 10 minutes.
+
+### Google Search Console (l'étape qui compte vraiment)
+
+1. Allez sur [search.google.com/search-console](https://search.google.com/search-console)
+   et connectez-vous avec votre compte Google.
+2. Choisissez **Préfixe d'URL** (pas « Domaine »), saisissez
+   `https://skyperspective.fr` et validez.
+3. Pour la vérification, choisissez la méthode **Balise HTML**. Google
+   affiche une ligne du type :
+
+   ```html
+   <meta name="google-site-verification" content="AbCdEf12345...">
+   ```
+
+   Copiez uniquement la valeur entre les guillemets de `content="…"`.
+4. Ouvrez `_build/layout.py` dans ce dossier, cherchez la ligne
+   `"google_site_verification": ""` (bloc `SITE` en haut du fichier) et
+   collez la valeur entre les guillemets.
+5. Enregistrez, puis :
+
+   ```bash
+   git add _build/layout.py
+   git commit -m "Ajoute la vérification Google Search Console"
+   git push
+   ```
+
+   Comptez une à deux minutes le temps que GitHub republie le site.
+6. Revenez sur Search Console, cliquez **Vérifier**.
+7. Une fois vérifié, menu **Sitemaps** (colonne de gauche) → collez
+   `sitemap.xml` → **Envoyer**. Le fichier existe déjà à la bonne adresse
+   (`https://skyperspective.fr/sitemap.xml`), rien d'autre à préparer.
+8. Menu **Inspection de l'URL** → collez `https://skyperspective.fr/` →
+   **Demander une indexation**. C'est ce qui accélère le plus la première
+   apparition dans les résultats (quelques jours au lieu de plusieurs
+   semaines).
+
+### Bing Webmaster Tools (bonus, 2 minutes)
+
+Sur [bing.com/webmasters](https://www.bing.com/webmasters), l'option
+**Importer depuis Google Search Console** reprend automatiquement la
+propriété et le sitemap déjà validés à l'étape précédente — utile car Bing
+alimente aussi Yahoo, DuckDuckGo et Copilot.
+
+### Fiche Google Business Profile (important pour le référencement local)
+
+Pour des recherches comme « drone Montpellier » ou « pilote drone
+professionnel », la fiche d'établissement compte souvent plus que le site
+lui-même dans les premiers résultats. Sur
+[google.com/business](https://www.google.com/business/), créez la fiche
+avec le nom, l'activité (télépilote de drone / vidéo aérienne), la zone
+d'intervention (Montpellier + déplacement France entière) et le lien vers
+`skyperspective.fr`. Google demande une vérification (SMS, appel ou carrier
+postal selon les cas) — à faire avec votre propre téléphone.
+
+### Ce qui se passe une fois ces étapes faites
+
+Une recherche sur le nom exact (« skyperspective.fr » ou « Sky
+Perspective ») remonte généralement en première position en quelques jours
+une fois le site indexé — il n'y a pas de concurrence sur une requête de
+marque. Remonter sur des requêtes génériques (« drone Montpellier »,
+« pilote drone immobilier ») prend plus de temps et dépend surtout de la
+fiche Google Business Profile et des avis clients une fois les premiers
+tournages réalisés.
+
+---
+
 ## Points d'attention déjà connus (voir CLAUDE.md)
 
 - La séquence Avata 2 (page Matériel) ne compte que 35 images ; un ré-export
