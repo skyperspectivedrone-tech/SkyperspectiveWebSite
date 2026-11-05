@@ -398,6 +398,84 @@ button { font: inherit; color: inherit; }
 .media-frame__label { font-family: var(--font-mono); font-size: var(--fs-label); letter-spacing: var(--ls-label); text-transform: uppercase; color: rgba(255,255,255,.6); }
 .media-frame__title { font-family: var(--font-display); font-size: 1.0625rem; letter-spacing: var(--ls-title); text-transform: uppercase; color: #fff; }
 
+/* ---------- Vidéos en boucle (prestations) ---------- */
+/* Le poster s'affiche le temps du chargement ; la vidéo du conteneur [data-boucle] tourne
+   seule dès qu'elle est à l'écran (ux.js). Le petit triangle s'efface pendant la lecture. */
+.media-frame video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.boucle-video__indice { position: absolute; top: 14px; right: 14px; z-index: 2; display: grid; place-items: center;
+  width: 34px; height: 34px; border-radius: 50%; color: #fff; background: rgba(10,20,36,.55);
+  border: 1px solid rgba(255,255,255,.28); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  transition: opacity var(--t-control), transform var(--t-control); pointer-events: none; }
+.boucle-video__indice svg { width: 14px; height: 14px; margin-left: 2px; }
+.est-en-lecture .boucle-video__indice { opacity: 0; transform: scale(.8); }
+@media (prefers-reduced-motion: reduce) { .boucle-video__indice { transition: none; } }
+
+/* ---------- Films complets (détail de prestation) ---------- */
+/* Vignettes cliquables qui ouvrent le film entier dans la visionneuse, puis un encadré
+   « Prochainement » en pointillés. Deux colonnes, une seule sous 480 px. */
+.films { display: grid; gap: var(--sp-4); }
+.films__grille { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4); }
+@media (max-width: 480px) { .films__grille { grid-template-columns: 1fr; } }
+.film { display: flex; flex-direction: column; gap: 4px; width: 100%; padding: 0; text-align: left;
+  font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+.film__media { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; margin-bottom: var(--sp-2);
+  border-radius: var(--r-media); border: 1px solid var(--border-hairline); background: var(--ink-900); }
+.film__media img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 1.2s var(--ease-glide); }
+.film__media::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 45%, rgba(5,10,13,.55)); }
+.film__lecture { position: absolute; inset: 0; margin: auto; z-index: 1; display: grid; place-items: center;
+  width: 44px; height: 44px; border-radius: 50%; color: #fff; background: rgba(10,20,36,.55);
+  border: 1px solid rgba(255,255,255,.35); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  transition: background var(--t-control), border-color var(--t-control), transform var(--t-control); }
+.film__lecture svg { width: 16px; height: 16px; margin-left: 2px; }
+.film__duree { position: absolute; right: 8px; bottom: 8px; z-index: 1; font-family: var(--font-mono);
+  font-size: var(--fs-label); letter-spacing: .08em; color: rgba(255,255,255,.85); }
+.film__titre { font-size: var(--fs-small); font-weight: var(--fw-semibold); color: var(--text-strong); }
+.film__sous { font-size: var(--fs-caption); color: var(--text-muted); }
+.film:hover .film__media img { transform: scale(1.045); }
+.film:hover .film__lecture, .film:focus-visible .film__lecture { background: var(--accent); border-color: var(--accent); transform: scale(1.06); }
+.film:focus-visible { outline: none; }
+.film:focus-visible .film__media { outline: 2px solid var(--accent-hover); outline-offset: 3px; }
+.film--bientot { cursor: default; }
+.film--bientot .film__media { display: grid; place-items: center; background: transparent;
+  border: 1px dashed rgba(255,255,255,.22); }
+.film--bientot .film__media::after { content: none; }
+.film__bientot { display: flex; flex-direction: column; align-items: center; gap: var(--sp-2);
+  font-family: var(--font-mono); font-size: var(--fs-label); letter-spacing: var(--ls-label);
+  text-transform: uppercase; color: var(--text-body); }
+.film__bientot svg { width: 20px; height: 20px; color: var(--accent-hover); }
+
+/* ---------- Ils m'ont déjà fait confiance ---------- */
+/* Logos ramenés en blanc uni pour s'accorder entre eux sur le fond marine, tous à la même
+   surface (dimensions calculées dans p_prestations.py). Le titre est en rouge : c'est un
+   argument de réassurance, il ne doit pas se fondre dans les surtitres gris. */
+.confiance { display: grid; gap: var(--sp-4); padding-top: var(--sp-5); border-top: 1px solid var(--border-hairline); }
+.confiance__titre { display: flex; align-items: center; gap: var(--sp-3); font-family: var(--font-mono);
+  font-size: var(--fs-caption); font-weight: var(--fw-semibold); letter-spacing: .18em; text-transform: uppercase;
+  color: var(--accent-hover); }
+.confiance__titre::before { content: ""; width: 26px; height: 2px; background: var(--accent); flex: none; }
+.confiance__logos { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-4) var(--sp-5); }
+.confiance__logos img { display: block; max-width: 100%; object-fit: contain;
+  filter: brightness(0) invert(1); opacity: .72; transition: opacity var(--t-control); }
+.confiance__logos img:hover { opacity: 1; }
+
+/* ---------- Visionneuse (film complet, avec le son) ---------- */
+.visionneuse { width: min(1100px, 100% - 32px); max-width: none; max-height: calc(100% - 32px); padding: 0;
+  border: 1px solid var(--border-hairline); border-radius: var(--r-media); background: #000; color: #fff; overflow: hidden; }
+.visionneuse::backdrop { background: rgba(5,10,13,.86); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.visionneuse__barre { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4);
+  padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-5); background: var(--ink-900); }
+.visionneuse__titre { font-family: var(--font-display); font-size: var(--fs-small); letter-spacing: var(--ls-title);
+  text-transform: uppercase; color: #fff; }
+.visionneuse__fermer { display: grid; place-items: center; width: 40px; height: 40px; flex: none; font-size: 1.6rem; line-height: 1;
+  color: #fff; background: none; border: 1px solid var(--border-hairline); border-radius: 50%; cursor: pointer;
+  transition: background var(--t-control), border-color var(--t-control); }
+.visionneuse__fermer:hover, .visionneuse__fermer:focus-visible { background: var(--accent); border-color: var(--accent); outline: none; }
+.visionneuse__video { display: block; width: 100%; aspect-ratio: 16 / 9; max-height: calc(100vh - 120px); background: #000; }
+@media (prefers-reduced-motion: reduce) {
+  .film__media img, .film__lecture, .confiance__logos img { transition: none; }
+  .film:hover .film__media img { transform: none; }
+}
+
 /* ---------- Ligne de tarif ---------- */
 .price-row { display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: var(--sp-5); padding: var(--sp-5) var(--sp-4); border-bottom: 1px solid var(--border-hairline); transition: background var(--t-control); }
 .price-row__icon { margin-top: 2px; }
@@ -688,3 +766,32 @@ button { font: inherit; color: inherit; }
   .hero__contenu { padding-top: calc(var(--nav-h) + 28px); padding-bottom: var(--sp-7); }
   .hero__titre { font-size: clamp(1.9rem, 9.5vw, 3rem); letter-spacing: .08em; }
 }
+
+/* ---------- Réalisations : projets alternés image / texte ---------- */
+.realisations { display: grid; gap: clamp(64px, 9vw, 120px); margin-top: var(--sp-9); }
+.realisation { display: grid; grid-template-columns: minmax(0,1.25fr) minmax(0,1fr); gap: var(--sp-9); align-items: center; scroll-margin-top: calc(var(--nav-h) + 24px); }
+.realisation--inverse > :first-child { order: 2; }
+.realisation__num { color: var(--accent-hover); }
+.realisation__titre { font-size: var(--fs-h1); font-weight: var(--fw-thin); letter-spacing: var(--ls-display); text-transform: uppercase; margin-top: var(--sp-4); }
+.realisation__meta { margin-top: var(--sp-3); }
+.realisation__desc { font-size: var(--fs-lead); font-weight: var(--fw-light); color: var(--text-body); margin-top: var(--sp-5); max-width: var(--max-w-text); }
+.realisation .detail-grid__included { margin-top: var(--sp-6); }
+.realisation__photos { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: var(--sp-3); margin-top: var(--sp-3); }
+.realisation__photo { display: block; aspect-ratio: 4 / 3; overflow: hidden; border-radius: var(--r-xs); border: 1px solid var(--border-hairline); }
+.realisation__photo img { width: 100%; height: 100%; object-fit: cover; transition: transform .8s var(--ease-glide); }
+.realisation__photo:hover img, .realisation__photo:focus-visible img { transform: scale(1.05); }
+@media (max-width: 980px) {
+  .realisation { grid-template-columns: 1fr; gap: var(--sp-6); }
+  .realisation--inverse > :first-child { order: 0; }
+}
+
+/* Lecteur vidéo « lite » : couverture + bouton, l'iframe YouTube n'arrive qu'au clic. */
+.lecteur { position: absolute; inset: 0; padding: 0; border: 0; background: none; cursor: pointer; z-index: 1; }
+.lecteur img { width: 100%; height: 100%; object-fit: cover; }
+.lecteur__bouton { position: absolute; left: 50%; top: 50%; width: 68px; height: 68px; margin: -34px 0 0 -34px; display: grid; place-items: center; border-radius: 999px; background: var(--accent); color: #fff; box-shadow: 0 8px 28px rgba(0,0,0,.45); transition: transform var(--t-control), background var(--t-control); }
+.lecteur__bouton svg { width: 24px; height: 24px; margin-left: 3px; }
+.lecteur:hover .lecteur__bouton, .lecteur:focus-visible .lecteur__bouton { transform: scale(1.08); background: var(--accent-hover); }
+.lecteur:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
+.realisation__media iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; z-index: 3; }
+.realisation__media:has(iframe)::after { display: none; }
+@media (prefers-reduced-motion: reduce) { .lecteur__bouton, .realisation__photo img { transition: none; } }

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Mentions légales et politique de confidentialité."""
+import p_realisations
 from layout import SITE
 
 
@@ -71,6 +72,11 @@ def confidentialite():
           <p>La demande de devis est acheminée par le service <strong>Web3Forms</strong>, qui
           transmet le contenu du formulaire par courrier électronique sans le conserver à des
           fins commerciales. Aucune inscription ni aucun cookie n’est requis de votre part.</p>"""),
+        *([_bloc("Vidéos intégrées", """
+          <p>Les vidéos de la page Réalisations sont hébergées sur <strong>YouTube</strong>,
+          en mode de confidentialité renforcée. Aucun contenu YouTube n’est chargé tant que
+          vous ne cliquez pas sur une vidéo ; c’est seulement à ce moment que YouTube peut
+          déposer ses propres cookies.</p>""")] if p_realisations.a_des_videos() else []),
         _bloc("Conservation et destinataires", f"""
           <p>Les demandes sans suite sont conservées douze mois. Les données liées à une
           prestation réalisée sont conservées le temps requis par les obligations comptables.</p>

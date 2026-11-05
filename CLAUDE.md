@@ -127,7 +127,8 @@ bloc d'interface, et imposerait de réécrire le reste du site pour rester cohé
 - Performance prioritaire (site vidéo) :
   - vidéo hero < 3 Mo, muette, sans piste audio, avec `poster` ;
   - sur mobile : image fixe au lieu de la vidéo hero ;
-  - jamais plus d'une vidéo en autoplay par écran visible.
+  - jamais plus d'une vidéo en autoplay par écran visible — sauf la page Prestations,
+    dont les vidéos tournent toutes en boucle (exception validée, voir plus bas).
 - Respecter `prefers-reduced-motion` sur toutes les animations.
 - Accessibilité : contrastes AA minimum, alternatives textuelles, navigation clavier.
 
@@ -139,6 +140,9 @@ bloc d'interface, et imposerait de réécrire le reste du site pour rester cohé
   - **Ne jamais committer les PNG 4K sources ni les zips.** Ils restent hors dépôt.
   - Seuls les dérivés web (WebP redimensionnés, MP4 compressés) entrent dans le dépôt.
   - Vidéos de réalisations : YouTube/Vimeo non répertorié, lite-embed au clic.
+  - **Exception validée** : les films complets de la page Prestations sont hébergés avec le
+    site (720p, ~23 Mo par minute, ~205 Mo au total). Aucun fichier au-delà de ~4 min de film,
+    sinon il dépasse la limite de 100 Mo.
 - Pages sur dépôt privé = compte GitHub Pro requis, sinon dépôt public.
 - Domaine branché via un fichier `CNAME`.
 
@@ -147,17 +151,34 @@ bloc d'interface, et imposerait de réécrire le reste du site pour rester cohé
 ```
 /                    Accueil
 /prestations         Page unique — les 6 prestations en blocs alternés
+/realisations        Tournages réels (publiée dès qu'un projet a sa couverture)
 /materiel            ★ section scroll 3D + cadre légal
 /tarifs              ★ grille + calculateur de devis
 /contact
 /mentions-legales  /confidentialite
 ```
 
-Navigation : **ACCUEIL · PRESTATIONS · TARIFS · MATÉRIEL · CONTACT** + bouton
+Navigation : **ACCUEIL · PRESTATIONS · RÉALISATIONS · TARIFS · MATÉRIEL · CONTACT** + bouton
 **DEVIS GRATUIT** encadré à droite.
 
-**Pas de page Réalisations en V1** : aucun lien mort, aucune mention « bientôt disponible ».
-Elle sera créée après les premiers tournages réels.
+## Page Réalisations
+
+Nom retenu : **« Réalisations »** — le terme que tout client français associe au travail
+déjà effectué (« Portfolio » parle surtout aux créatifs).
+
+Projets dans `PROJETS` (`_build/p_realisations.py`) : restaurant, maison, drift. Blocs
+alternés image/texte, numéro et libellé de prestation **identique** à `/prestations`, lien
+« Voir la prestation » vers `prestations.html#p-<id>` (ouvre le bon détail, géré dans `ux.js`).
+
+- **Publication automatique** : un projet n'apparaît que si sa couverture existe dans `site/`.
+  Sans aucun projet publiable, `build.py` ne génère pas la page et retire le lien du menu —
+  aucun lien mort, aucune mention « bientôt disponible ».
+- Uniquement des tournages réels, avec **accord écrit du client** (la page l'affirme).
+- Vidéos : YouTube non répertorié, lecteur « lite » (`realisations.js`) : iframe
+  `youtube-nocookie` chargée **au clic seulement**. La page Confidentialité ajoute alors
+  un bloc « Vidéos intégrées ».
+- Images : `site/assets/img/realisations/<id>/couverture.jpg` (16:9, 1600 px, sips q76).
+- La maquette `build_artifact.py` n'inclut pas encore cette page.
 
 ## Page Prestations
 
@@ -188,6 +209,92 @@ Nommage retenu : « Scans 3D & photogrammétrie » et « Suivi de chantier & BTP
 Les visuels d'illustration ne sont pas des réalisations : aucune légende, aucun nom de client,
 aucune formulation laissant croire qu'ils ont été tournés par Sky Perspective.
 Ils sont remplacés par de vraies images au fil des tournages.
+
+### Vidéos des prestations — en boucle
+
+Chaque prestation qui a un tournage réel affiche **sa vidéo en boucle à la place de la photo**
+sur sa **carte de la grille**. Détection automatique dans `p_prestations.py` :
+la vidéo est utilisée dès que `site/assets/media/prestations/<id>.mp4` et son poster `<id>.jpg`
+existent ; sinon la photo reste. Aucune autre modification à faire pour en ajouter une.
+
+    swift -suppress-warnings _build/video_prestation.swift <id> <source>:<debut>-<fin> [...]
+    python3 build.py
+
+Chaque argument `<source>:<debut>-<fin>` est un plan (temps en secondes) ; les plans sont
+enchaînés en **coupes franches**, d'une ou plusieurs vidéos sources, dans l'ordre donné.
+Le script (AVFoundation, sans ffmpeg) recadre chaque plan en 16:9, produit une boucle H.264
+1280 × 720 à 30 i/s, **sans piste audio**, ~1,8 Mbit/s (≈ 2,3 Mo pour 10 s), HDR ramené en SDR
+Rec. 709, et le poster pris sur la **première image** du montage : le passage poster → vidéo
+ne saute pas.
+
+**Rythme demandé** (décision validée, revue) : chaque plan dure **1,5 à 2 s** — les coupes à
+0,7 s d'abord essayées étaient trop rapides. Jamais un long extrait continu : les vidéos
+source étant souvent des plans-séquences FPV, on saute des passages pour accélérer la visite.
+En allongeant un plan, vérifier qu'il ne déborde pas sur une coupe ou un fondu de la source.
+Poids actuel : 3,9 à 5,9 Mo par vidéo (17 à 26 s), chargés seulement à l'arrivée à l'écran.
+
+Comportement (`ux.js`, conteneurs `[data-boucle]`) — **lecture automatique en boucle**
+(décision validée, remplace la lecture au survol) : aucune action du visiteur, ni clic ni survol.
+- chaque carte joue dès qu'elle est à l'écran, sur ordinateur comme sur mobile, et se met en
+  pause hors champ ;
+- **exception assumée** à la règle « une seule vidéo en autoplay par écran » : la grille en
+  fait tourner jusqu'à quatre à la fois, à la demande explicite de l'utilisateur ;
+- mouvement réduit : rien ne démarre seul, le poster reste affiché ;
+- `preload="none"` : aucune vidéo n'est téléchargée avant d'arriver à l'écran.
+
+Montages en place — plans exacts dans `_build/montages_prestations.sh`, à modifier puis relancer
+(`_build/montages_prestations.sh sport` pour un seul) :
+
+| id | Sources | Construction |
+|---|---|---|
+| sport | `por floflo.mov`, `video voiture 3.mp4`, `video drift 2.MOV`, `video voiture .mp4`, `video voiture 2.mp4` | 8 poursuites **vues de derrière** puis 4 plans **vus du dessus** (20,6 s) |
+| commerces | `Visite des voutes Caluire v02.MOV` | part du début (titre sur la Saône), puis 9 coupes jusqu'à la salle voûtée (17,2 s) |
+| immobilier | `fanny gavalda immobilier.mp4`, `portfolio/house.mov` | les deux biens **entremêlés un plan sur deux** (16 plans, 26,2 s) : approche aérienne, intérieur, villa de Bali, finit sur la villa dans son jardin |
+| tourisme | `portfolio/bali.mov`, `portfolio/LES CARROZ D'ARÂCHES.mp4` | Bali et la montagne **entremêlés** (14 plans, 23,7 s) : piscines, rizières, sommets, forêt, village, coucher de soleil ; titre incrusté des Carroz évité |
+
+Scans 3D et Suivi de chantier gardent leur photo : aucun tournage n'existe pour ces catégories.
+Ne jamais y mettre de plans pris dans une autre prestation (un plan de rallye au coucher de
+soleil avait été posé sur Tourisme, refusé). Tourisme n'a de vidéo que depuis l'arrivée de
+ses propres tournages (dossier `portfolio`).
+`montage .mp4` est la bande démo qui mélange plusieurs prestations : ne pas l'attribuer à une seule.
+
+### Détail d'une prestation — films complets et logos clients
+
+Le cadre du détail (colonne de droite) ne contient plus la boucle (décision validée) :
+1. **Films complets** (`FILMS` dans `p_prestations.py`) : vignettes 16:9 cliquables, avec
+   durée et titre, qui ouvrent le film **entier, avec le son**, dans une visionneuse
+   (`<dialog class="visionneuse">`, `ux.js` : Échap ou clic hors de la vidéo pour fermer, la
+   source est retirée à la fermeture pour couper le téléchargement).
+2. Toujours un dernier encadré **« Prochainement »** en pointillés : d'autres films arrivent.
+   Une prestation sans aucun film garde sa photo d'illustration au-dessus de cet encadré.
+3. **« Ils m'ont déjà fait confiance »** (`CONFIANCE`) : logos dans `site/assets/img/logos/`,
+   ramenés en blanc uni par CSS (`brightness(0) invert(1)`) pour s'accorder entre eux.
+   Fournir des PNG **à fond transparent** (ou SVG) : un fond opaque deviendrait un rectangle blanc.
+   Le titre est **en rouge** avec un filet (décision validée) : c'est un argument de réassurance,
+   il ne doit pas se confondre avec les surtitres gris.
+   **Taille** : les logos Sport (~130 × 20 px) sont la référence validée. Chaque logo est affiché
+   à la même surface (`AIRE_LOGO`), corrigée à moitié par sa **densité** (part de pixels opaques,
+   mesurée une fois et notée dans `CONFIANCE`) : sans cela, un logo fin (Guylène Bergé, Les Voûtes)
+   paraissait nettement plus petit qu'un logo gras (FFSA, Favas). Mesurer la densité d'un
+   nouveau logo avant de l'ajouter.
+
+Films en place — produits par `_build/films_prestations.sh` (720p, ~3 Mbit/s, son AAC) :
+
+| Prestation | Films |
+|---|---|
+| Immobilier | Maison à Villeneuve (`fanny gavalda immobilier.mp4`) · Villa à Bali (`portfolio/house.mov`) |
+| Commerces | Restaurant Les Voûtes, Caluire |
+| Sport | Critérium des Cévennes 1, 2, 3 (`video voiture .mp4`, `video voiture 2.mp4`, `video voiture 3.mp4`) **en premier**, puis Favas (`Drones/Montage/FavasV05.mp4`) et Marbil (`marbilv02_instagram.mov`) |
+| Tourisme | Bali (`portfolio/bali.mov`) · Les Carroz d'Arâches |
+
+Logos : Guylène Bergé (immobilier, agence de Fanny Gavalda — logo du site gb-immobilier.com) ·
+Restaurant Les Voûtes, Caluire (commerces) · FFSA, Critérium des Cévennes, Favas, Marbil
+(sport) · Cretya Jungle Lite by Alas Harum, Bali (tourisme).
+Marbil est reconstruit en SVG depuis les tracés de `Communication/Marbil/marbil-anim.html` ;
+Favas est la rangée FAVAS de la dernière image de `TridemWay/tridem_x_favas_v2_png_59.94fps`.
+
+Ajouter un film : une ligne `F <id> <instant poster> <source>` dans `films_prestations.sh`,
+le lancer avec cet identifiant, ajouter l'entrée dans `FILMS`, puis `python3 build.py`.
 
 ## Page Matériel
 

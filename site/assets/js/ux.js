@@ -40,6 +40,15 @@
         cible.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     });
+
+    /* Arrivée depuis une autre page sur prestations.html#p-xxx : ouvrir ce détail. */
+    var demande = location.hash && document.getElementById(location.hash.slice(1));
+    if (demande && demande.classList.contains('detail-panel')) {
+      var ouvert = document.querySelector('.detail-panel.is-active');
+      if (ouvert) ouvert.classList.remove('is-active');
+      demande.classList.add('is-active');
+      demande.scrollIntoView({ block: 'start' });
+    }
   }
 
   /* Cartes "Trois façons de voir votre projet" : la vidéo se lance toute seule
@@ -54,6 +63,56 @@
       });
     }, { threshold: 0.4 });
     clips.forEach(function (video) { ioClips.observe(video); });
+  }
+
+  /* Prestations : la vidéo de chaque carte de la grille tourne en boucle toute seule dès
+     qu'elle est à l'écran, sans clic ni survol, et se met en pause hors champ pour ne pas
+     décoder inutilement. Rien n'est téléchargé avant (preload="none").
+     Mouvement réduit : rien ne démarre seul, le poster reste affiché. */
+  var boucles = document.querySelectorAll('[data-boucle]');
+  if (boucles.length && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    var ioBoucles = new IntersectionObserver(function (entrees) {
+      entrees.forEach(function (e) {
+        var v = e.target.querySelector('video');
+        if (e.isIntersecting) {
+          e.target.classList.add('est-en-lecture');
+          v.play().catch(function () { e.target.classList.remove('est-en-lecture'); });
+        } else {
+          e.target.classList.remove('est-en-lecture');
+          v.pause();
+        }
+      });
+    }, { threshold: 0.25 });
+    boucles.forEach(function (zone) { ioBoucles.observe(zone); });
+  }
+
+  /* Prestations : une vignette de film ouvre le film complet, avec le son, dans la
+     visionneuse (<dialog> modale : Échap ferme, le focus revient sur la vignette).
+     La source n'est posée qu'à l'ouverture et retirée à la fermeture, pour couper le
+     téléchargement en cours. Un clic hors de la vidéo ferme aussi. */
+  var visionneuse = document.querySelector('.visionneuse');
+  if (visionneuse && visionneuse.showModal) {
+    var film = visionneuse.querySelector('video');
+    document.querySelectorAll('.film[data-film]').forEach(function (vignette) {
+      vignette.addEventListener('click', function () {
+        visionneuse.querySelector('.visionneuse__titre').textContent = vignette.dataset.titre;
+        film.poster = vignette.dataset.poster;
+        film.src = vignette.dataset.film;
+        visionneuse.showModal();
+        film.play().catch(function () {});
+      });
+    });
+    visionneuse.querySelector('.visionneuse__fermer').addEventListener('click', function () {
+      visionneuse.close();
+    });
+    visionneuse.addEventListener('click', function (e) {
+      if (e.target === visionneuse) visionneuse.close();
+    });
+    visionneuse.addEventListener('close', function () {
+      film.pause();
+      film.removeAttribute('src');
+      film.load();
+    });
   }
 
   document.querySelectorAll('.accordion__item').forEach(function (item) {

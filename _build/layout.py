@@ -18,6 +18,7 @@ SITE = {
 NAV = [
     ("Accueil", "index.html"),
     ("Prestations", "prestations.html"),
+    ("Réalisations", "realisations.html"),  # retiré par build.py tant qu'aucun projet n'est publiable
     ("Tarifs", "tarifs.html"),
     ("Matériel", "materiel.html"),
     ("Contact", "contact.html"),
@@ -57,6 +58,7 @@ ICONES = {
     "clock": '<circle cx="10" cy="10" r="7.4" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10 5.6V10l3 1.8" fill="none" stroke="currentColor" stroke-width="1.4"/>',
     "arrow-right": '<path d="M4 10h12M11 5l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
     "check": '<path d="M4 10.5 8 14l8-8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+    "play": '<path d="M7 4.8v10.4l8.2-5.2z" fill="currentColor"/>',
     "building": '<rect x="4" y="2.5" width="9" height="15" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M13 8h3v9.5H4" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 5.5h1.2M9.5 5.5h1.2M6.5 8.5h1.2M9.5 8.5h1.2M6.5 11.5h1.2M9.5 11.5h1.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>',
     "utensils": '<path d="M4 3v4M6 3v4M8 3v4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M6 7v10.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M14 3c-2 0-3 2-3 4.5S12 11 14 11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M14 3v14.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>',
     "running": '<g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M14.007 5a2 2 0 1 0 4 0a2 2 0 0 0-4 0"/><path d="M7 17l5 1l.75-1.5M18 21v-4l-4-3l1-6"/><path d="M10 12V9l5-1l3 3l3 1M10 5H6m0 5H2"/></g>',

@@ -2,8 +2,9 @@
 """Génère site/*.html — équivalent du build Astro, sans dépendance."""
 import sys, os, pathlib, datetime
 sys.path.insert(0, "_build")
+import layout
 from layout import page, SITE
-import p_prestations, p_autres, p_legal, p_materiel, p_tarifs
+import p_prestations, p_autres, p_legal, p_materiel, p_tarifs, p_realisations
 
 SORTIE = pathlib.Path("site")
 
@@ -16,6 +17,10 @@ PAGES = [
      "Vidéo aérienne pour l’immobilier, les commerces, le sport mécanique, le suivi de chantier, "
      "les scans 3D et le tourisme. Prestations drone stabilisé et FPV partout en France.",
      p_prestations.contenu),
+    ("realisations.html", "Réalisations",
+     "Les tournages drone réalisés par Sky Perspective : restaurant, immobilier, drift. "
+     "Vidéos et photos aériennes stabilisées et FPV.",
+     p_realisations.contenu),
     ("tarifs.html", "Tarifs",
      "Tarifs de prestation drone : immobilier à partir de 450 €, commerces 590 €, "
      "sport mécanique 850 €, suivi de chantier 450 € par passage.",
@@ -37,12 +42,20 @@ PAGES = [
 
 def main():
     SORTIE.mkdir(exist_ok=True)
+    # Pas de projet publiable → ni page, ni lien dans la navigation (aucun lien mort).
+    if not p_realisations.projets_publies():
+        PAGES[:] = [pg for pg in PAGES if pg[0] != "realisations.html"]
+        layout.NAV[:] = [lien for lien in layout.NAV if lien[1] != "realisations.html"]
+        (SORTIE / "realisations.html").unlink(missing_ok=True)
+        print("  ⚠ Réalisations : aucune couverture trouvée, page non publiée")
     for fichier, titre, description, rendu in PAGES:
         scripts = ""
         if fichier == "materiel.html":
             scripts = '<script src="assets/js/reveal.js" defer></script>'
         elif fichier == "tarifs.html":
             scripts = '<script src="assets/js/devis.js" defer></script>'
+        elif fichier == "realisations.html" and p_realisations.a_des_videos():
+            scripts = '<script src="assets/js/realisations.js" defer></script>'
         elif fichier == "contact.html":
             scripts = '<script src="assets/js/contact.js" defer></script>'
         html = page(titre, description, fichier, rendu(), scripts)
