@@ -166,15 +166,24 @@ def _duree_mp4(chemin):
             f.seek(taille - 8, 1)
 
 
+def _instants_poster():
+    """{id: instant (s)} de l'image d'attente de chaque film, lus dans films_prestations.sh
+    (lignes « F <id> <instant> <source> ») : l'aperçu au survol démarre sur cette image."""
+    import re
+    script = (pathlib.Path(__file__).parent / "films_prestations.sh").read_text(encoding="utf-8")
+    return {m[1]: m[2] for m in re.finditer(r"^F\s+(\S+)\s+([\d.]+)\s", script, re.M)}
+
+
 def _films(s):
     """Vignettes des films de la prestation, puis l'encadré « Prochainement »."""
+    debuts = _instants_poster()
     vignettes = []
     for nom, titre, sous in FILMS.get(s["id"], []):
         video = FILMS_DIR / f"{nom}.mp4"
         if not video.exists():
             continue
         base = f"assets/media/films/{nom}"
-        vignettes.append(f"""<li><button type="button" class="film" data-film="{base}.mp4" data-poster="{base}.jpg" data-titre="{titre}">
+        vignettes.append(f"""<li><button type="button" class="film" data-film="{base}.mp4" data-poster="{base}.jpg" data-debut="{debuts.get(nom, 0)}" data-titre="{titre}">
               <span class="film__media"><img src="{base}-vignette.jpg" alt="" loading="lazy" decoding="async">
                 <span class="film__lecture" aria-hidden="true">{icone("play")}</span>
                 <span class="film__duree">{_duree_mp4(video)}</span></span>

@@ -65,25 +65,71 @@
     clips.forEach(function (video) { ioClips.observe(video); });
   }
 
-  /* Prestations : la vidéo de chaque carte de la grille tourne en boucle toute seule dès
-     qu'elle est à l'écran, sans clic ni survol, et se met en pause hors champ pour ne pas
-     décoder inutilement. Rien n'est téléchargé avant (preload="none").
-     Mouvement réduit : rien ne démarre seul, le poster reste affiché. */
+  /* Prestations : la vidéo de chaque carte de la grille démarre au survol (ou au focus
+     clavier) et revient à sa première image — identique au poster — quand le curseur s'en va
+     (décision validée : pas de lecture automatique sur ordinateur).
+     Sans survol (tactile) : elle tourne dès qu'elle est à l'écran, en pause hors champ.
+     Rien n'est téléchargé avant (preload="none"). Mouvement réduit : le poster reste affiché. */
   var boucles = document.querySelectorAll('[data-boucle]');
   if (boucles.length && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    var ioBoucles = new IntersectionObserver(function (entrees) {
-      entrees.forEach(function (e) {
-        var v = e.target.querySelector('video');
-        if (e.isIntersecting) {
-          e.target.classList.add('est-en-lecture');
-          v.play().catch(function () { e.target.classList.remove('est-en-lecture'); });
-        } else {
-          e.target.classList.remove('est-en-lecture');
-          v.pause();
-        }
+    var lire = function (zone) {
+      zone.classList.add('est-en-lecture');
+      zone.querySelector('video').play().catch(function () { zone.classList.remove('est-en-lecture'); });
+    };
+    var arreter = function (zone, rembobiner) {
+      var v = zone.querySelector('video');
+      zone.classList.remove('est-en-lecture');
+      v.pause();
+      if (rembobiner && v.readyState) v.currentTime = 0;
+    };
+    if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      boucles.forEach(function (zone) {
+        zone.addEventListener('mouseenter', function () { lire(zone); });
+        zone.addEventListener('mouseleave', function () { arreter(zone, true); });
+        zone.addEventListener('focusin', function () { lire(zone); });
+        zone.addEventListener('focusout', function () { arreter(zone, true); });
       });
-    }, { threshold: 0.25 });
-    boucles.forEach(function (zone) { ioBoucles.observe(zone); });
+    } else {
+      var ioBoucles = new IntersectionObserver(function (entrees) {
+        entrees.forEach(function (e) {
+          if (e.isIntersecting) lire(e.target); else arreter(e.target, false);
+        });
+      }, { threshold: 0.25 });
+      boucles.forEach(function (zone) { ioBoucles.observe(zone); });
+    }
+  }
+
+  /* Prestations : au survol d'une vignette de film, un aperçu muet du film démarre dans la
+     vignette, à l'instant de son image d'attente (data-debut) pour que l'image ne saute pas.
+     La vidéo n'est créée et chargée qu'au premier survol ; elle se met en pause quand le
+     curseur s'en va. Souris uniquement, et jamais en mouvement réduit. */
+  if (window.matchMedia('(hover: hover) and (pointer: fine)').matches &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.querySelectorAll('.film[data-film]').forEach(function (vignette) {
+      var apercu = null;
+      vignette.addEventListener('mouseenter', function () {
+        if (!apercu) {
+          apercu = document.createElement('video');
+          apercu.className = 'film__apercu';
+          apercu.muted = true; apercu.loop = true; apercu.playsInline = true;
+          apercu.setAttribute('aria-hidden', 'true');
+          apercu.preload = 'auto';
+          apercu.addEventListener('loadedmetadata', function () {
+            apercu.currentTime = parseFloat(vignette.dataset.debut) || 0;
+          }, { once: true });
+          apercu.addEventListener('playing', function () {
+            if (vignette.matches(':hover')) vignette.classList.add('est-en-lecture');
+          });
+          apercu.src = vignette.dataset.film;
+          vignette.querySelector('.film__media').appendChild(apercu);
+        }
+        apercu.play().catch(function () {});
+      });
+      vignette.addEventListener('mouseleave', function () {
+        vignette.classList.remove('est-en-lecture');
+        if (apercu) apercu.pause();
+      });
+    });
   }
 
   /* Prestations : une vignette de film ouvre le film complet, avec le son, dans la

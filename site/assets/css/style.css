@@ -358,7 +358,8 @@ button { font: inherit; color: inherit; }
 .service-card__media { position: relative; aspect-ratio: 16 / 10; overflow: hidden; }
 .service-card__media img, .service-card__media video { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 1.4s var(--ease-glide); }
 .service-card:hover .service-card__media img, .service-card:hover .service-card__media video { transform: scale(1.045); }
-.service-card__media::after { content: ""; position: absolute; inset: 0; background-image: var(--veil-bottom); opacity: .9; }
+/* Pas de voile sur les miniatures (décision validée) : il assombrissait les vidéos, et son bord
+   formait un liseré en bas quand l'image s'agrandit au survol. */
 .service-card__body { padding: var(--sp-6); display: flex; flex-direction: column; gap: var(--sp-3); flex: 1; }
 .service-card__icon { color: var(--text-muted); transition: color var(--t-control); }
 .service-card__icon svg { width: 22px; height: 22px; }
@@ -399,8 +400,8 @@ button { font: inherit; color: inherit; }
 .media-frame__title { font-family: var(--font-display); font-size: 1.0625rem; letter-spacing: var(--ls-title); text-transform: uppercase; color: #fff; }
 
 /* ---------- Vidéos en boucle (prestations) ---------- */
-/* Le poster s'affiche le temps du chargement ; la vidéo du conteneur [data-boucle] tourne
-   seule dès qu'elle est à l'écran (ux.js). Le petit triangle s'efface pendant la lecture. */
+/* Le poster tient lieu de photo ; la vidéo du conteneur [data-boucle] démarre au survol,
+   ou seule à l'écran sur tactile (ux.js). Le petit triangle s'efface pendant la lecture. */
 .media-frame video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .boucle-video__indice { position: absolute; top: 14px; right: 14px; z-index: 2; display: grid; place-items: center;
   width: 34px; height: 34px; border-radius: 50%; color: #fff; background: rgba(10,20,36,.55);
@@ -420,25 +421,29 @@ button { font: inherit; color: inherit; }
   font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
 .film__media { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; margin-bottom: var(--sp-2);
   border-radius: var(--r-media); border: 1px solid var(--border-hairline); background: var(--ink-900); }
-.film__media img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 1.2s var(--ease-glide); }
-.film__media::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 45%, rgba(5,10,13,.55)); }
-.film__lecture { position: absolute; inset: 0; margin: auto; z-index: 1; display: grid; place-items: center;
+/* Ni voile ni agrandissement au survol : le voile ternissait l'image, et l'agrandissement
+   d'une image dans un cadre arrondi laissait un liseré en bas. Le survol lance un aperçu. */
+.film__media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.film__apercu { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;
+  opacity: 0; transition: opacity .35s var(--ease-out); }
+.film.est-en-lecture .film__apercu { opacity: 1; }
+.film__lecture { position: absolute; inset: 0; margin: auto; z-index: 2; display: grid; place-items: center;
   width: 44px; height: 44px; border-radius: 50%; color: #fff; background: rgba(10,20,36,.55);
   border: 1px solid rgba(255,255,255,.35); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
   transition: background var(--t-control), border-color var(--t-control), transform var(--t-control); }
 .film__lecture svg { width: 16px; height: 16px; margin-left: 2px; }
-.film__duree { position: absolute; right: 8px; bottom: 8px; z-index: 1; font-family: var(--font-mono);
-  font-size: var(--fs-label); letter-spacing: .08em; color: rgba(255,255,255,.85); }
+.film__duree { position: absolute; right: 8px; bottom: 8px; z-index: 2; padding: 2px 6px; border-radius: var(--r-xs);
+  font-family: var(--font-mono); font-size: var(--fs-label); letter-spacing: .08em; color: #fff;
+  background: rgba(5,10,13,.62); }
 .film__titre { font-size: var(--fs-small); font-weight: var(--fw-semibold); color: var(--text-strong); }
 .film__sous { font-size: var(--fs-caption); color: var(--text-muted); }
-.film:hover .film__media img { transform: scale(1.045); }
+.film:hover .film__media { border-color: rgba(255,255,255,.22); }
 .film:hover .film__lecture, .film:focus-visible .film__lecture { background: var(--accent); border-color: var(--accent); transform: scale(1.06); }
 .film:focus-visible { outline: none; }
 .film:focus-visible .film__media { outline: 2px solid var(--accent-hover); outline-offset: 3px; }
 .film--bientot { cursor: default; }
 .film--bientot .film__media { display: grid; place-items: center; background: transparent;
   border: 1px dashed rgba(255,255,255,.22); }
-.film--bientot .film__media::after { content: none; }
 .film__bientot { display: flex; flex-direction: column; align-items: center; gap: var(--sp-2);
   font-family: var(--font-mono); font-size: var(--fs-label); letter-spacing: var(--ls-label);
   text-transform: uppercase; color: var(--text-body); }
@@ -472,8 +477,7 @@ button { font: inherit; color: inherit; }
 .visionneuse__fermer:hover, .visionneuse__fermer:focus-visible { background: var(--accent); border-color: var(--accent); outline: none; }
 .visionneuse__video { display: block; width: 100%; aspect-ratio: 16 / 9; max-height: calc(100vh - 120px); background: #000; }
 @media (prefers-reduced-motion: reduce) {
-  .film__media img, .film__lecture, .confiance__logos img { transition: none; }
-  .film:hover .film__media img { transform: none; }
+  .film__apercu, .film__lecture, .confiance__logos img { transition: none; }
 }
 
 /* ---------- Ligne de tarif ---------- */

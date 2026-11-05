@@ -1,14 +1,26 @@
-// Prépare les vidéos web de la page Prestations, en H.264 1280 × 720 à 30 i/s, démarrage
-// rapide (faststart), plus une image d'attente (poster) en JPEG.
+// Prépare les vidéos web de la page Prestations, en H.264 1280 × 720, démarrage rapide
+// (faststart), plus une image d'attente (poster) en JPEG.
 //
 // Deux usages :
-//  - boucle (défaut) : plusieurs extraits enchaînés en coupes franches, SANS son, ~1,8 Mbit/s.
+//  - boucle (défaut) : plusieurs extraits enchaînés en coupes franches, SANS son, ~3 Mbit/s.
 //    Le poster est la première image, pour que le passage poster → vidéo ne saute pas.
 //        swift -suppress-warnings _build/video_prestation.swift <id> <source>:<debut>-<fin> [...]
 //    → site/assets/media/prestations/<id>.mp4 et <id>.jpg
-//  - film (--film) : une vidéo source entière, AVEC son (AAC 128 kbit/s), ~3 Mbit/s.
+//  - film (--film) : une vidéo source entière, AVEC son (AAC 128 kbit/s), ~3,5 Mbit/s.
 //        swift -suppress-warnings _build/video_prestation.swift --film [--poster <s>] <id> <source>
 //    → site/assets/media/films/<id>.mp4 et <id>.jpg (poster pris à <s> secondes, 25 % par défaut)
+//
+// Cadence : chaque extrait garde celle de SA source (24, 25, 29,97…) ; au-delà de 30 i/s
+// (59,94 des FPV) elle est divisée exactement par deux. Ne jamais forcer une cadence unique :
+// 24 i/s rééchantillonné en 30 répète une image sur quatre et la vidéo saccade. Un montage
+// qui mêle des sources de cadences différentes donne donc un MP4 à cadence variable,
+// ce que tous les navigateurs lisent.
+//
+// Encodage : pas d'images B (AVVideoAllowFrameReorderingKey à false). Avec elles, l'encodeur
+// compressait une image sur deux bien plus fort que ses voisines : la netteté alternait d'une
+// image à l'autre (mesuré : 117 / 126 / 117 / 125…) et la vidéo semblait trembler. Le débit a
+// été relevé en même temps (boucles 1,8 → 3 Mbit/s) : à 1,8, le grain des routes et des
+// feuillages disparaissait en mouvement.
 //
 // Sans ffmpeg : AVFoundation est livré avec macOS. Chaque extrait est recadré en remplissage
 // 16:9 (sources 4K, 1080p ou tournées) et les sources HDR (HLG des DJI) ramenées en SDR Rec. 709.
@@ -36,7 +48,7 @@ while let premier = args.first, premier.hasPrefix("--") {
 }
 guard args.count >= 2 else { print(USAGE); exit(1) }
 let LARGEUR = 1280, HAUTEUR = 720
-let DEBIT = modeFilm ? 3_000_000 : 1_800_000
+let DEBIT = modeFilm ? 3_500_000 : 3_000_000
 let rendu = CGSize(width: LARGEUR, height: HAUTEUR)
 
 // "<chemin>:<debut>-<fin>" — découpé sur le dernier « : », le chemin peut contenir des espaces.
@@ -66,72 +78,56 @@ let sortieVideo = dossier.appendingPathComponent("\(args[0]).mp4")
 let sortiePoster = dossier.appendingPathComponent("\(args[0]).jpg")
 try? FileManager.default.removeItem(at: sortieVideo)
 
-// Montage : les extraits bout à bout sur une piste image (et une piste son en mode film),
-// chacun avec son recadrage.
-let montage = AVMutableComposition()
-let piste = montage.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid)!
-let pisteSon = modeFilm
-  ? montage.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid) : nil
+// Un plan prêt à lire : sa source, sa plage, sa place dans le montage et sa composition
+// (recadrage 16:9, conversion SDR, cadence de la source).
+struct Plan {
+  let source: AVURLAsset; let piste: AVAssetTrack; let plage: CMTimeRange
+  let decalage: CMTime; let compo: AVVideoComposition; let cadence: Double
+}
+var plans: [Plan] = []
 var curseur = CMTime.zero
-var instructions: [AVMutableVideoCompositionInstruction] = []
 for e in extraits {
   let source = AVURLAsset(url: URL(fileURLWithPath: e.chemin))
-  guard let pisteSource = source.tracks(withMediaType: .video).first else {
+  guard let piste = source.tracks(withMediaType: .video).first else {
     print("✗ aucune piste vidéo lisible dans : \(e.chemin)"); exit(1)
   }
   let plage = (e.debut != nil && e.fin != nil)
     ? CMTimeRange(start: CMTime(seconds: e.debut!, preferredTimescale: 600),
                   end: CMTime(seconds: e.fin!, preferredTimescale: 600))
-    : pisteSource.timeRange
-  try piste.insertTimeRange(plage, of: pisteSource, at: curseur)
-  if let pisteSon {
-    if let sonSource = source.tracks(withMediaType: .audio).first {
-      try pisteSon.insertTimeRange(plage, of: sonSource, at: curseur)
-    } else {
-      pisteSon.insertEmptyTimeRange(CMTimeRange(start: curseur, duration: plage.duration))
-    }
-  }
+    : piste.timeRange
 
   // Orientation de la source, puis remplissage du cadre 16:9 centré.
-  let oriente = CGRect(origin: .zero, size: pisteSource.naturalSize).applying(pisteSource.preferredTransform)
+  let oriente = CGRect(origin: .zero, size: piste.naturalSize).applying(piste.preferredTransform)
   let echelle = max(rendu.width / oriente.width, rendu.height / oriente.height)
-  let cadrage = pisteSource.preferredTransform
+  let cadrage = piste.preferredTransform
     .concatenating(CGAffineTransform(translationX: -oriente.minX, y: -oriente.minY))
     .concatenating(CGAffineTransform(scaleX: echelle, y: echelle))
     .concatenating(CGAffineTransform(translationX: (rendu.width - oriente.width * echelle) / 2,
                                      y: (rendu.height - oriente.height * echelle) / 2))
   let couche = AVMutableVideoCompositionLayerInstruction(assetTrack: piste)
-  couche.setTransform(cadrage, at: curseur)
+  couche.setTransform(cadrage, at: .zero)
   let instruction = AVMutableVideoCompositionInstruction()
-  instruction.timeRange = CMTimeRange(start: curseur, duration: plage.duration)
+  instruction.timeRange = CMTimeRange(start: .zero, duration: source.duration)
   instruction.layerInstructions = [couche]
-  instructions.append(instruction)
+
+  // Cadence de la source (durée d'image exacte, 1001/24000 pour du 23,976…), doublée au-delà de 30 i/s.
+  var duree = piste.minFrameDuration
+  if !duree.isValid || duree.seconds <= 0 { duree = CMTime(value: 1, timescale: 30) }
+  if duree.seconds < 1.0 / 31 { duree = CMTimeMultiply(duree, multiplier: 2) }
+
+  let compo = AVMutableVideoComposition()
+  compo.renderSize = rendu
+  compo.frameDuration = duree
+  compo.instructions = [instruction]
+  compo.colorPrimaries = AVVideoColorPrimaries_ITU_R_709_2
+  compo.colorTransferFunction = AVVideoTransferFunction_ITU_R_709_2
+  compo.colorYCbCrMatrix = AVVideoYCbCrMatrix_ITU_R_709_2
+
+  plans.append(Plan(source: source, piste: piste, plage: plage, decalage: curseur, compo: compo,
+                    cadence: 1 / duree.seconds))
   curseur = curseur + plage.duration
 }
-// La dernière instruction doit finir exactement avec la piste image, sinon la composition est refusée.
-if let derniere = instructions.last {
-  derniere.timeRange = CMTimeRange(start: derniere.timeRange.start, end: piste.timeRange.end)
-}
-
-let compo = AVMutableVideoComposition()
-compo.renderSize = rendu
-compo.frameDuration = CMTime(value: 1, timescale: 30)
-compo.instructions = instructions
-compo.colorPrimaries = AVVideoColorPrimaries_ITU_R_709_2
-compo.colorTransferFunction = AVVideoTransferFunction_ITU_R_709_2
-compo.colorYCbCrMatrix = AVVideoYCbCrMatrix_ITU_R_709_2
-
-let lecteur = try AVAssetReader(asset: montage)
-lecteur.timeRange = CMTimeRange(start: .zero, end: piste.timeRange.end)
-let sortie = AVAssetReaderVideoCompositionOutput(
-  videoTracks: [piste],
-  videoSettings: [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA])
-sortie.videoComposition = compo
-lecteur.add(sortie)
-let sortieSon = pisteSon.map {
-  AVAssetReaderAudioMixOutput(audioTracks: [$0], audioSettings: [AVFormatIDKey: kAudioFormatLinearPCM])
-}
-if let sortieSon { lecteur.add(sortieSon) }
+let dureeTotale = curseur
 
 let couleurs = [AVVideoColorPrimariesKey: AVVideoColorPrimaries_ITU_R_709_2,
                 AVVideoTransferFunctionKey: AVVideoTransferFunction_ITU_R_709_2,
@@ -146,64 +142,108 @@ let entree = AVAssetWriterInput(mediaType: .video, outputSettings: [
   AVVideoCompressionPropertiesKey: [
     AVVideoAverageBitRateKey: DEBIT,
     AVVideoProfileLevelKey: AVVideoProfileLevelH264HighAutoLevel,
-    AVVideoMaxKeyFrameIntervalKey: 60,
+    AVVideoAllowFrameReorderingKey: false,
+    AVVideoMaxKeyFrameIntervalDurationKey: 2,
   ],
 ])
 entree.expectsMediaDataInRealTime = false
 ecrivain.add(entree)
-let entreeSon = sortieSon.map { _ in
-  AVAssetWriterInput(mediaType: .audio, outputSettings: [
-    AVFormatIDKey: kAudioFormatMPEG4AAC,
-    AVNumberOfChannelsKey: 2,
-    AVSampleRateKey: 48_000,
-    AVEncoderBitRateKey: 128_000,
-  ])
-}
+let entreeSon: AVAssetWriterInput? = modeFilm ? AVAssetWriterInput(mediaType: .audio, outputSettings: [
+  AVFormatIDKey: kAudioFormatMPEG4AAC,
+  AVNumberOfChannelsKey: 2,
+  AVSampleRateKey: 48_000,
+  AVEncoderBitRateKey: 128_000,
+]) : nil
 if let entreeSon { entreeSon.expectsMediaDataInRealTime = false; ecrivain.add(entreeSon) }
 
-lecteur.startReading()
 ecrivain.startWriting()
 ecrivain.startSession(atSourceTime: .zero)
-let groupe = DispatchGroup()
-func copier(_ de: AVAssetReaderOutput, vers: AVAssetWriterInput, file: String) {
-  groupe.enter()
-  vers.requestMediaDataWhenReady(on: DispatchQueue(label: file)) {
-    while vers.isReadyForMoreMediaData {
-      if let echantillon = de.copyNextSampleBuffer() {
-        vers.append(echantillon)
-      } else {
-        vers.markAsFinished()
-        groupe.leave()
-        return
-      }
+
+// Recale un échantillon de sa source sur le montage : t_montage = t_source - début du plan + décalage.
+func recaler(_ echantillon: CMSampleBuffer, _ p: Plan) -> CMSampleBuffer? {
+  var n: CMItemCount = 0
+  CMSampleBufferGetSampleTimingInfoArray(echantillon, entryCount: 0, arrayToFill: nil, entriesNeededOut: &n)
+  var temps = [CMSampleTimingInfo](repeating: CMSampleTimingInfo(), count: max(n, 1))
+  CMSampleBufferGetSampleTimingInfoArray(echantillon, entryCount: n, arrayToFill: &temps, entriesNeededOut: &n)
+  for i in temps.indices {
+    temps[i].presentationTimeStamp = temps[i].presentationTimeStamp - p.plage.start + p.decalage
+    if temps[i].decodeTimeStamp.isValid {
+      temps[i].decodeTimeStamp = temps[i].decodeTimeStamp - p.plage.start + p.decalage
     }
   }
+  var copie: CMSampleBuffer?
+  CMSampleBufferCreateCopyWithNewTiming(allocator: nil, sampleBuffer: echantillon,
+                                        sampleTimingEntryCount: n, sampleTimingArray: &temps,
+                                        sampleBufferOut: &copie)
+  return copie
 }
-copier(sortie, vers: entree, file: "image")
-if let sortieSon, let entreeSon { copier(sortieSon, vers: entreeSon, file: "son") }
+
+// Lit les plans l'un après l'autre (un seul décodeur ouvert à la fois) et les pousse dans
+// l'entrée. Image et son tournent sur deux files : l'écrivain entrelace les deux pistes et
+// attendrait l'une si l'autre n'avançait pas.
+func pousser(_ vers: AVAssetWriterInput, son: Bool) throws {
+  for p in plans {
+    let lecteur = try AVAssetReader(asset: p.source)
+    lecteur.timeRange = p.plage
+    let sortie: AVAssetReaderOutput
+    if son {
+      guard let pisteSon = p.source.tracks(withMediaType: .audio).first else { continue }
+      sortie = AVAssetReaderAudioMixOutput(audioTracks: [pisteSon],
+                                           audioSettings: [AVFormatIDKey: kAudioFormatLinearPCM])
+    } else {
+      let s = AVAssetReaderVideoCompositionOutput(
+        videoTracks: [p.piste],
+        videoSettings: [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA])
+      s.videoComposition = p.compo
+      sortie = s
+    }
+    lecteur.add(sortie)
+    lecteur.startReading()
+    while let echantillon = sortie.copyNextSampleBuffer() {
+      guard let recale = recaler(echantillon, p) else { continue }
+      while !vers.isReadyForMoreMediaData { usleep(2_000) }
+      vers.append(recale)
+    }
+    if lecteur.status == .failed { throw lecteur.error ?? CocoaError(.fileReadUnknown) }
+  }
+  vers.markAsFinished()
+}
+let groupe = DispatchGroup()
+var erreur: Error?
+for (vers, son) in [(entree, false)] + (entreeSon.map { [($0, true)] } ?? []) {
+  DispatchQueue.global().async(group: groupe) {
+    do { try pousser(vers, son: son) } catch { erreur = error; vers.markAsFinished() }
+  }
+}
 groupe.wait()
 let fin = DispatchSemaphore(value: 0)
 ecrivain.finishWriting { fin.signal() }
 fin.wait()
-guard ecrivain.status == .completed else {
-  print("✗ échec : \(ecrivain.error?.localizedDescription ?? lecteur.error?.localizedDescription ?? "?")")
+guard erreur == nil, ecrivain.status == .completed else {
+  print("✗ échec : \(erreur?.localizedDescription ?? ecrivain.error?.localizedDescription ?? "?")")
   exit(1)
 }
 
 // Poster : première image (boucle) ou image choisie (film), même recadrage et colorimétrie.
-let duree = CMTimeGetSeconds(piste.timeRange.end)
-let instantPoster = modeFilm ? min(tempsPoster ?? duree * 0.25, duree - 0.1) : 0
-let generateur = AVAssetImageGenerator(asset: montage)
-generateur.videoComposition = compo
+let premier = plans[0]
+let instant = modeFilm
+  ? premier.plage.start + CMTime(seconds: min(tempsPoster ?? dureeTotale.seconds * 0.25,
+                                              premier.plage.duration.seconds - 0.1),
+                                 preferredTimescale: 600)
+  : premier.plage.start
+let generateur = AVAssetImageGenerator(asset: premier.source)
+generateur.videoComposition = premier.compo
 generateur.maximumSize = rendu
 generateur.requestedTimeToleranceBefore = .zero
 generateur.requestedTimeToleranceAfter = .zero
-let image = try generateur.copyCGImage(at: CMTime(seconds: instantPoster, preferredTimescale: 600), actualTime: nil)
+let image = try generateur.copyCGImage(at: instant, actualTime: nil)
 let jpeg = CGImageDestinationCreateWithURL(sortiePoster as CFURL, UTType.jpeg.identifier as CFString, 1, nil)!
 CGImageDestinationAddImage(jpeg, image, [kCGImageDestinationLossyCompressionQuality: 0.76] as CFDictionary)
 CGImageDestinationFinalize(jpeg)
 
 let poids = { (u: URL) in ((try? u.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0) / 1024 }
+let cadences = Set(plans.map { String(format: "%.2f", $0.cadence) }).sorted().joined(separator: " / ")
 let son = modeFilm ? ", avec son" : ""
-print("✓ \(sortieVideo.lastPathComponent)  \(LARGEUR)×\(HAUTEUR)  \(extraits.count) plan(s), \(String(format: "%.1f", duree)) s\(son)  \(poids(sortieVideo)) Ko")
+print("✓ \(sortieVideo.lastPathComponent)  \(LARGEUR)×\(HAUTEUR)  \(plans.count) plan(s), "
+      + "\(String(format: "%.1f", dureeTotale.seconds)) s, \(cadences) i/s\(son)  \(poids(sortieVideo)) Ko")
 print("✓ \(sortiePoster.lastPathComponent)  \(poids(sortiePoster)) Ko")

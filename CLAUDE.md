@@ -127,8 +127,7 @@ bloc d'interface, et imposerait de réécrire le reste du site pour rester cohé
 - Performance prioritaire (site vidéo) :
   - vidéo hero < 3 Mo, muette, sans piste audio, avec `poster` ;
   - sur mobile : image fixe au lieu de la vidéo hero ;
-  - jamais plus d'une vidéo en autoplay par écran visible — sauf la page Prestations,
-    dont les vidéos tournent toutes en boucle (exception validée, voir plus bas).
+  - jamais plus d'une vidéo en autoplay par écran visible.
 - Respecter `prefers-reduced-motion` sur toutes les animations.
 - Accessibilité : contrastes AA minimum, alternatives textuelles, navigation clavier.
 
@@ -223,7 +222,7 @@ existent ; sinon la photo reste. Aucune autre modification à faire pour en ajou
 Chaque argument `<source>:<debut>-<fin>` est un plan (temps en secondes) ; les plans sont
 enchaînés en **coupes franches**, d'une ou plusieurs vidéos sources, dans l'ordre donné.
 Le script (AVFoundation, sans ffmpeg) recadre chaque plan en 16:9, produit une boucle H.264
-1280 × 720 à 30 i/s, **sans piste audio**, ~1,8 Mbit/s (≈ 2,3 Mo pour 10 s), HDR ramené en SDR
+1280 × 720 **à la cadence de chaque source**, **sans piste audio**, ~1,8 Mbit/s (≈ 2,3 Mo pour 10 s), HDR ramené en SDR
 Rec. 709, et le poster pris sur la **première image** du montage : le passage poster → vidéo
 ne saute pas.
 
@@ -231,14 +230,18 @@ ne saute pas.
 0,7 s d'abord essayées étaient trop rapides. Jamais un long extrait continu : les vidéos
 source étant souvent des plans-séquences FPV, on saute des passages pour accélérer la visite.
 En allongeant un plan, vérifier qu'il ne déborde pas sur une coupe ou un fondu de la source.
-Poids actuel : 3,9 à 5,9 Mo par vidéo (17 à 26 s), chargés seulement à l'arrivée à l'écran.
+Poids actuel : 6,3 à 9,7 Mo par vidéo (17 à 26 s, 3 Mbit/s), chargés seulement au survol.
+⚠️ **Encodage** : jamais d'images B et jamais moins de ~3 Mbit/s pour ces boucles FPV. À
+1,8 Mbit/s avec images B, une image sur deux était bien plus compressée que ses voisines :
+la netteté alternait (mesuré) et les miniatures semblaient trembler (« effet de shake »).
 
-Comportement (`ux.js`, conteneurs `[data-boucle]`) — **lecture automatique en boucle**
-(décision validée, remplace la lecture au survol) : aucune action du visiteur, ni clic ni survol.
-- chaque carte joue dès qu'elle est à l'écran, sur ordinateur comme sur mobile, et se met en
-  pause hors champ ;
-- **exception assumée** à la règle « une seule vidéo en autoplay par écran » : la grille en
-  fait tourner jusqu'à quatre à la fois, à la demande explicite de l'utilisateur ;
+Comportement (`ux.js`, conteneurs `[data-boucle]`) — **lecture au survol** (décision validée,
+dernière en date : la lecture automatique a été essayée puis refusée) :
+- souris : la vidéo démarre au survol de la carte (ou au focus clavier) et revient à sa première
+  image, identique au poster, quand le curseur s'en va ;
+- tactile : sans survol possible, elle tourne quand la carte est à l'écran, en pause hors champ ;
+- **aucun voile** sur les miniatures : le dégradé sombre ternissait les vidéos et son bord
+  formait un liseré en bas pendant l'agrandissement au survol ;
 - mouvement réduit : rien ne démarre seul, le poster reste affiché ;
 - `preload="none"` : aucune vidéo n'est téléchargée avant d'arriver à l'écran.
 
@@ -261,8 +264,18 @@ ses propres tournages (dossier `portfolio`).
 ### Détail d'une prestation — films complets et logos clients
 
 Le cadre du détail (colonne de droite) ne contient plus la boucle (décision validée) :
+⚠️ **Cadence** : ne jamais forcer une cadence unique. Les sources tournent à 24, 23,976,
+29,97 ou 59,94 i/s ; tout passer en 30 i/s répétait une image sur quatre des sources 24p
+(saccades visibles, signalées comme des « tremblements »). Le script garde la cadence de chaque
+extrait, divise exactement par deux le 59,94, et produit un MP4 à cadence variable quand un
+montage mêle plusieurs cadences.
+
 1. **Films complets** (`FILMS` dans `p_prestations.py`) : vignettes 16:9 cliquables, avec
-   durée et titre, qui ouvrent le film **entier, avec le son**, dans une visionneuse
+   durée et titre, sans voile ni agrandissement (le voile ternissait l'image ; l'agrandissement
+   d'une image dans un cadre arrondi laissait un liseré en bas). **Au survol** (souris
+   uniquement), un aperçu muet du film démarre dans la vignette, à l'instant de son poster
+   (`data-debut`, lu dans `films_prestations.sh`). Au clic, elles ouvrent le film **entier,
+   avec le son**, dans une visionneuse
    (`<dialog class="visionneuse">`, `ux.js` : Échap ou clic hors de la vidéo pour fermer, la
    source est retirée à la fermeture pour couper le téléchargement).
 2. Toujours un dernier encadré **« Prochainement »** en pointillés : d'autres films arrivent.
@@ -284,7 +297,7 @@ Films en place — produits par `_build/films_prestations.sh` (720p, ~3 Mbit/s, 
 |---|---|
 | Immobilier | Maison à Villeneuve (`fanny gavalda immobilier.mp4`) · Villa à Bali (`portfolio/house.mov`) |
 | Commerces | Restaurant Les Voûtes, Caluire |
-| Sport | Critérium des Cévennes 1, 2, 3 (`video voiture .mp4`, `video voiture 2.mp4`, `video voiture 3.mp4`) **en premier**, puis Favas (`Drones/Montage/FavasV05.mp4`) et Marbil (`marbilv02_instagram.mov`) |
+| Sport | Critérium des Cévennes 1, 2, 3 (`Devis/Critérium des Cévennes 2026/Reseau PartN (avec musique) .mp4` — **jamais** la version « sans musique ») **en premier**, puis Favas (`Drones/Montage/FavasV05.mp4`) et Marbil (`marbilv02_instagram.mov`) |
 | Tourisme | Bali (`portfolio/bali.mov`) · Les Carroz d'Arâches |
 
 Logos : Guylène Bergé (immobilier, agence de Fanny Gavalda — logo du site gb-immobilier.com) ·
@@ -517,6 +530,8 @@ Régénérer et prévisualiser :
 
 ⚠️ Le processus de prévisualisation n'a pas accès au dossier `Documents` : la copie servie
 vit dans le scratchpad de session, synchronisée par `rsync` après chaque build.
+`serve.py` gère les requêtes par plage (`Range`), comme GitHub Pages : sans elles, Chrome ne
+peut pas se placer au milieu d'une vidéo et l'aperçu des films repartirait du début.
 
 Bascule vers Astro dès que Node est installé : le HTML et le CSS se transposent tels quels,
 `layout.py` devient `Layout.astro`, chaque fonction de page devient un fichier `.astro`.
